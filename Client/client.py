@@ -1,15 +1,29 @@
 import socket
+import getpass
 
 namenode_ip = '127.0.0.1'
 namenode_port = 5005
-client_id = 1
 buffer_size = 1024
+
+
+def log_in():
+    nickname = input('Your nickname:')
+    password = getpass.getpass(prompt='Your password:')
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((namenode_ip, namenode_port))
+    message = 'login:' + nickname + ':' + password
+    tcp_socket.send(message.encode())
+    data = tcp_socket.recv(buffer_size)
+    tcp_socket.close()
+    return data
 
 
 def send_command(commands):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((namenode_ip, namenode_port))
-    message = commands[0] + ':' + str(client_id) + ':' + commands[1]
+    message = str(client_id)
+    for cm in commands:
+        message += ':' + cm
     tcp_socket.send(message.encode())
     data = tcp_socket.recv(buffer_size)
     tcp_socket.close()
@@ -17,6 +31,8 @@ def send_command(commands):
 
 
 if __name__ == '__main__':
+    client_id = log_in()
+    print(client_id)
     while True:
         command = input().lower().split()
         print(send_command(command).decode())

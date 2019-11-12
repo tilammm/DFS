@@ -1,6 +1,26 @@
 import socket
 from _thread import *
 import threading
+import psycopg2
+
+
+try:
+    connection = psycopg2.connect(user="test",
+                                  password="123456",
+                                  host="127.0.0.1",
+                                  port="5432",
+                                  database="DFS")
+
+    cursor = connection.cursor()
+    # Print PostgreSQL Connection properties
+    print(connection.get_dsn_parameters(), "\n")
+
+    # Print PostgreSQL version
+    cursor.execute("SELECT version();")
+    record = cursor.fetchone()
+
+except (Exception, psycopg2.Error) as error:
+    print("Error while connecting to PostgreSQL", error)
 
 
 ip = '127.0.0.1'
@@ -9,12 +29,22 @@ buffer_size = 1024
 print_lock = threading.Lock()
 
 
+def check_user(log_in, password):
+    query = 'select * from client where username = %s'
+    print(log_in)
+    cursor.execute(query, (log_in, ))
+    users = cursor.fetchall()
+    if len(users) == 0:
+        return 0
+    else:
+        return users[0][0]
+
+
 def command_handler(message):
     words = message.split(':')
-    command = words[0]
-    client_id = words[1]
-    file_name = words[2]
-    return command
+    if words[0] == 'login':
+        out = str(check_user(words[1], words[2]))
+    return out
 
 
 def threaded(connection, address):
@@ -29,7 +59,6 @@ def threaded(connection, address):
 
         data = command_handler(data.decode())
         connection.send(data.encode())
-
         # connection closed
     connection.close()
 
