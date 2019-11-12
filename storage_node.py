@@ -1,11 +1,12 @@
 import sys
 import socket
+import threading
 from threading import Thread
-
+from _thread import *
 
 files = []
 clients = []
-
+print_lock = threading.Lock()
 
 class ClientListener(Thread):
     def __init__(self, name: str, sock: socket.socket):
@@ -91,7 +92,8 @@ class ClientListener(Thread):
                     return
 
 
-def receive(port):
+def receive(port, connection):
+    connection.send('ok'.encode())
 
     print('Server is ready for users')
 
@@ -102,14 +104,59 @@ def receive(port):
     sock.bind(('', int(port)))
     sock.listen()
 
+
     while True:
         con, addr = sock.accept()
         clients.append(con)
         name = 'u' + str(next_name)
         next_name += 1
         print(str(addr) + ' connected as ' + name)
+
         ClientListener(name, con).start()
+
+def command_handler(message, connection):
+    if (message == 'receive'):
+        receive(8800, connection)
+        return 'accepted'
+    else:
+        return 'error'
+
+
+
+
+def threaded(connection, address):
+    while True:
+        # data received from client
+        data = connection.recv(1024)
+        if not data:
+            print(f'Connection with {address[0]} closed')
+            # lock released on exit
+            print_lock.release()
+            break
+
+        data = command_handler(data.decode(), connection)
+        print(data)
+        connection.send(data.encode())
+        # connection closed
+    connection.close()
+
+
+
+
+
 
 
 if __name__ == '__main__':
-    receive('8800')
+    print('Server is ready for commands')
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(('', 8000))
+    sock.listen()
+
+    while True:
+        con, addr = sock.accept()
+
+        start_new_thread(threaded, (con, addr))
+
+
