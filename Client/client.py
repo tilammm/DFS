@@ -90,7 +90,7 @@ def send_command(commands):
         data = tcp_socket.recv(buffer_size).decode()
         storage_node = data.split(':')
         print(storage_node)
-        send(commands[1], storage_node[0], int(storage_node[1]))
+        send(commands[1], storage_node[0], str(storage_node[1]))
     tcp_socket.close()
     return data
 
@@ -103,5 +103,6 @@ if __name__ == '__main__':
         client_id = registration()
 
     while True:
-        command = input().split()
-        print(send_command(command))
+        command = input().lower().split()
+        print(send_command(command).decode())
+
