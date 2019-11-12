@@ -90,6 +90,7 @@ class ClientListener(Thread):
                     self._close()
                     return
 
+
 def receive(port):
 
     print('Server is ready for users')
@@ -110,5 +111,5 @@ def receive(port):
         ClientListener(name, con).start()
 
 
-# if __name__ == '__main__':
-#     receive('8800')
+if __name__ == '__main__':
+    receive('8800')

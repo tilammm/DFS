@@ -51,12 +51,30 @@ def login_user(log_in, password):
         return users[0][0]
 
 
+def send_file():
+    storagenode_ip = '127.0.0.1'
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((storagenode_ip, 8080))
+    message = 'recive_file'
+    tcp_socket.send(message.encode())
+    status = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+    if status == 'ok':
+        return storagenode_ip, 8080
+    else:
+        return storagenode_ip
+
+
 def command_handler(message):
+    print(message)
     words = message.split(':')
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
     elif words[0] == 'register':
         out = str(register_user(words[1], words[2], words[3]))
+    elif words[0] == 'write':
+        storagenode_ip, storagenode_port = send_file()
+        out = storagenode_ip + ':' + str(storagenode_port)
     return out
 
 
