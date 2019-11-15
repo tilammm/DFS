@@ -1,4 +1,3 @@
-import sys
 import socket
 import threading
 from threading import Thread
@@ -7,6 +6,7 @@ from _thread import *
 files = []
 clients = []
 print_lock = threading.Lock()
+
 
 class ClientListener(Thread):
     def __init__(self, name: str, sock: socket.socket):
@@ -37,7 +37,6 @@ class ClientListener(Thread):
             
                 self.sock.sendall('1'.encode())
 
-
                 if self.filename_buffer in files:
 
                     print('Collision occured!')
@@ -62,10 +61,8 @@ class ClientListener(Thread):
 
                     while (file_name + '_copy' + str(copy_num) + file_extension) in files:
                         copy_num += 1
-                    
 
                     self.final_filename = file_name + '_copy' + str(copy_num) + file_extension
-                    
 
                     files.append(self.final_filename)
                     print('New file name is ' + self.final_filename)
@@ -104,7 +101,6 @@ def receive(port, connection):
     sock.bind(('', int(port)))
     sock.listen()
 
-
     while True:
         con, addr = sock.accept()
         clients.append(con)
@@ -114,14 +110,13 @@ def receive(port, connection):
 
         ClientListener(name, con).start()
 
+
 def command_handler(message, connection):
-    if (message == 'receive'):
+    if message == 'receive':
         receive(8800, connection)
         return 'accepted'
     else:
         return 'error'
-
-
 
 
 def threaded(connection, address):
@@ -139,11 +134,6 @@ def threaded(connection, address):
         connection.send(data.encode())
         # connection closed
     connection.close()
-
-
-
-
-
 
 
 if __name__ == '__main__':
