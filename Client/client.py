@@ -106,3 +106,4 @@ if __name__ == '__main__':
         command = input().lower().split()
         print(send_command(command).decode())
 
+print("hello")
