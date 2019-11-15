@@ -37,6 +37,10 @@ def send(filename, ip, port):
 
             if i % 128 == 0:
 
+                hashtags = '#' * int((i / file_size) * 20)
+                dots = '.' * (20 - len(hashtags))
+
+                print('\033[F\033[K' + 'Progress: ' + hashtags + dots + ' ', end="\r")
                 buff += byte
                 sock.sendall(buff)
                 buff = b''
@@ -85,13 +89,8 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
         storage_node = data.split(':')
+        print(storage_node)
         send(commands[1], storage_node[0], str(storage_node[1]))
-    elif commands[0] == 'initialize':
-        message = commands[0]
-        tcp_socket.send(message.encode())
-        data = tcp_socket.recv(buffer_size).decode()
-    else:
-        data = 'unknown command'
     tcp_socket.close()
     return data
 
@@ -102,11 +101,8 @@ if __name__ == '__main__':
         client_id = log_in()
     elif act == 'register':
         client_id = registration()
-    else:
-        print('unknown command')
 
     while True:
         command = input().lower().split()
         print(send_command(command).decode())
 
-print("hello")
