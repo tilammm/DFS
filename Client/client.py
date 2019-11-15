@@ -37,10 +37,6 @@ def send(filename, ip, port):
 
             if i % 128 == 0:
 
-                hashtags = '#' * int((i / file_size) * 20)
-                dots = '.' * (20 - len(hashtags))
-
-                print('\033[F\033[K' + 'Progress: ' + hashtags + dots + ' ', end="\r")
                 buff += byte
                 sock.sendall(buff)
                 buff = b''

@@ -30,8 +30,8 @@ def add_node_loc(current_tree, dir_name):
 
 if __name__ == '__main__':
 
-	general_tree = Tree();
-	general_tree.create_node("File system", "fs");
+	general_tree = Tree()
+	general_tree.create_node("File system", "fs")
 	general_tree = add_user("Mark", general_tree)
 	general_tree = add_user("Askar", general_tree)
 	general_tree = restore_path(general_tree, "Mark/Test/text.txt")
@@ -39,6 +39,7 @@ if __name__ == '__main__':
 	general_tree = add_node_loc(general_tree, "Mark/text.txt")
 	general_tree = add_node_loc(general_tree, "Mark/Test/text.txt")
 	general_tree.show()
+	print(general_tree)
 
 
 	#placeholder id
