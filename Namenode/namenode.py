@@ -51,30 +51,43 @@ def login_user(log_in, password):
         return users[0][0]
 
 
-def send_file():
-    storagenode_ip = '127.0.0.1'
+def send_file(storage_node_ip, storage_node_port):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storagenode_ip, 8000))
+    tcp_socket.connect((storage_node_ip, storage_node_port))
     message = 'receive'
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
     if status == 'ok':
-        return storagenode_ip, 8000
+        return storage_node_ip, storage_node_port
     else:
-        return storagenode_ip
+        return storage_node_ip
+
+
+def send_init(storage_node_ip, storage_node_port):
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((storage_node_ip, storage_node_port))
+    message = 'receive'
+    tcp_socket.send(message.encode())
+    status = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+    return  status
 
 
 def command_handler(message):
     print(message)
     words = message.split(':')
+    storage_node_ip = '127.0.0.1'
+    storage_node_port = 8000
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
     elif words[0] == 'register':
         out = str(register_user(words[1], words[2], words[3]))
     elif words[0] == 'write':
-        storagenode_ip, storagenode_port = send_file()
+        storagenode_ip, storagenode_port = send_file(storage_node_ip, storage_node_port)
         out = storagenode_ip + ':' + str(storagenode_port)
+    elif words[0] == 'init':
+        out = send_init(storage_node_ip, storage_node_port)
     return out
 
 

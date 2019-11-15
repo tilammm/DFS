@@ -111,10 +111,17 @@ def receive(port, connection):
         ClientListener(name, con).start()
 
 
+def init():
+    return None
+
+
 def command_handler(message, connection):
     if message == 'receive':
         receive(8800, connection)
-        return 'accepted'
+        return 'received'
+    elif message == 'init':
+        init()
+        return 'initialized'
     else:
         return 'error'
 

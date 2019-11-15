@@ -84,8 +84,12 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
         storage_node = data.split(':')
-        print(storage_node)
         send(commands[1], storage_node[0], str(storage_node[1]))
+    elif commands[0] == 'initialize':
+        message = commands[0]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+
     tcp_socket.close()
     return data
 
