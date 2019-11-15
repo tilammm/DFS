@@ -52,7 +52,7 @@ def login_user(log_in, password):
 
 
 def send_file():
-    storagenode_ip = '188.130.155.153'
+    storagenode_ip = '127.0.0.1'
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((storagenode_ip, 8000))
     message = 'receive'
@@ -60,7 +60,7 @@ def send_file():
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
     if status == 'ok':
-        return storagenode_ip, 8800
+        return storagenode_ip, 8000
     else:
         return storagenode_ip
 

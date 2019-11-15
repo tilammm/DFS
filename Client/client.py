@@ -1,6 +1,7 @@
 import socket
 import getpass
 import os
+import sys
 
 namenode_ip = '127.0.0.1'
 namenode_port = 5005
@@ -24,33 +25,27 @@ def send(filename, ip, port):
     file_size = f.tell()
     f.seek(old_file_position, os.SEEK_SET)
 
-    i = 1
-    buff = b''
-    while True:
+    bytes_transported = 128
 
-        byte = f.read(1)
+    percent = 0
 
-        if byte == b'':
-            sock.sendall(buff)
-            break
-        else:
+    byte = f.read(128)
 
-            if i % 128 == 0:
+    while byte:
 
-                hashtags = '#' * int((i / file_size) * 20)
-                dots = '.' * (20 - len(hashtags))
+        if bytes_transported * 100 // file_size > percent:
+            percent = bytes_transported * 100 // file_size
+            if percent > 100:
+                percent = 100
+            sys.stdout.flush()
+            sys.stdout.write(f'\r{percent}%')
 
-                print('\033[F\033[K' + 'Progress: ' + hashtags + dots + ' ', end="\r")
-                buff += byte
-                sock.sendall(buff)
-                buff = b''
-                i += 1
-            else:
-                buff += byte
-                i += 1
+        bytes_transported += 128
+        sock.send(byte)
+        byte = f.read(128)
 
     print('The file has been sent')
-
+    sock.close()
     f.close()
 
 
@@ -104,5 +99,5 @@ if __name__ == '__main__':
 
     while True:
         command = input().lower().split()
-        print(send_command(command).decode())
+        print(send_command(command))
 
