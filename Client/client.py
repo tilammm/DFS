@@ -2,6 +2,7 @@ import socket
 import getpass
 import os
 import sys
+import readline
 
 namenode_ip = '127.0.0.1'
 namenode_port = 5005
@@ -43,8 +44,7 @@ def send(filename, ip, port):
         bytes_transported += 128
         sock.send(byte)
         byte = f.read(128)
-
-    print('The file has been sent')
+    print()
     sock.close()
     f.close()
 
@@ -72,7 +72,6 @@ def log_in():
     tcp_socket.send(message.encode())
     data = tcp_socket.recv(buffer_size)
     tcp_socket.close()
-    print(data.decode())
     return data
 
 
@@ -85,6 +84,7 @@ def send_command(commands):
         data = tcp_socket.recv(buffer_size).decode()
         storage_node = data.split(':')
         send(commands[1], storage_node[0], str(storage_node[1]))
+        data = 'The file has been sent'
     elif commands[0] == 'initialize':
         message = commands[0]
         tcp_socket.send(message.encode())
@@ -95,16 +95,27 @@ def send_command(commands):
     return data
 
 
-if __name__ == '__main__':
-    act = input('Want to login or register?(login/register)').lower()
+def start():
+    act = input('Want to login or register?(login/register): ').lower()
     if act == 'login':
         client_id = log_in()
     elif act == 'register':
         client_id = registration()
     else:
-        print('unknown command')
+        print('Unknown command. Try again')
+        start()
+
+
+if __name__ == '__main__':
+    start()
+
+    current_dir = 'root'
+
+    # Readline сustomization
+
+    readline.parse_and_bind('tab: complete')
 
     while True:
-        command = input().lower().split()
+        command = input(current_dir + ': ').lower().split()
         print(send_command(command))
 
