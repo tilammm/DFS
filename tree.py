@@ -1,4 +1,3 @@
-import sys
 import datetime
 
 
@@ -12,7 +11,7 @@ class Tree:
         self.path = path
         self.last_mod = datetime.datetime.now().ctime()
         self.number_of_file = 0
-        self.storg_nodes = []
+        self.storage_nodes = []
 
     def delete_dir(self):
         for file in self.files:
@@ -41,7 +40,7 @@ class Tree:
 
 class File:
 
-    def __init__(self, name, path, size, parent = None):
+    def __init__(self, name, path, size, parent=None):
         self.parent = parent
         self.name = name
         self.path = path
@@ -50,11 +49,9 @@ class File:
         self.storg_nodes = []
 
     def info(self):
-        info = 'Name: ' + str(self.name) + '\n' + 'Size: ' + str(self.size) + ' bytes' + '\n' + 'Path: ' + str(self.path) + '\n' + 'Modified: ' + str(self.last_mod)
+        info = 'Name: ' + str(self.name) + '\n' + 'Size: ' + str(self.size) + ' bytes' + '\n' + 'Path: ' + \
+               str(self.path) + '\n' + 'Modified: ' + str(self.last_mod)
         return info
-
-
-
 
 
 root = Tree('root', '/')
