@@ -42,6 +42,7 @@ if __name__ == '__main__':
 	general_tree = add_node_loc(general_tree, "Mark/text.txt")
 	general_tree = add_node_loc(general_tree, "Mark/Test/text.txt")
 	general_tree.show()
+	print(general_tree)
 
 
 	#placeholder id
