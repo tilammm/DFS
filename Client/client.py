@@ -89,7 +89,8 @@ def send_command(commands):
         message = commands[0]
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
-
+    else:
+        data = 'unknown command'
     tcp_socket.close()
     return data
 
@@ -100,6 +101,8 @@ if __name__ == '__main__':
         client_id = log_in()
     elif act == 'register':
         client_id = registration()
+    else:
+        print('unknown command')
 
     while True:
         command = input().lower().split()

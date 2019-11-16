@@ -2,7 +2,7 @@ import socket
 from _thread import *
 import threading
 import psycopg2
-from .tree import Tree
+from Namenode.tree import Tree
 
 try:
     connection = psycopg2.connect(user="test",
@@ -79,6 +79,8 @@ def command_handler(message):
     words = message.split(':')
     storage_node_ip = '127.0.0.1'
     storage_node_port = 8000
+    global file_tree
+    global current_directory
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
     elif words[0] == 'register':
@@ -86,8 +88,13 @@ def command_handler(message):
     elif words[0] == 'write':
         storagenode_ip, storagenode_port = send_file(storage_node_ip, storage_node_port)
         out = storagenode_ip + ':' + str(8800)
-    elif words[0] == 'init':
+    elif words[0] == 'initialize':
+        file_tree.delete_dir()
+        file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
+        current_directory = file_tree
         out = send_init(storage_node_ip, storage_node_port)
+    else:
+        out = 'unknown command'
 
     return out
 
@@ -113,6 +120,8 @@ if __name__ == '__main__':
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.bind((ip, port))
     tcp_socket.listen()
+    file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
+    current_directory = file_tree
     while True:
         # establish connection with client
         conn, addr = tcp_socket.accept()
