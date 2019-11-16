@@ -3,6 +3,7 @@ import threading
 from threading import Thread
 from _thread import *
 import os
+import shutil
 
 
 files = []
@@ -93,7 +94,9 @@ def receive(port, connection):
 
 
 def init():
-    return None
+    shutil.rmtree(path=root_directory, ignore_errors=True)
+    os.mkdir(root_directory)
+    return 'Initialized'
 
 
 def command_handler(message, connection):
@@ -102,8 +105,7 @@ def command_handler(message, connection):
         receive(8800, connection)
         return 'received'
     elif message == 'init':
-        init()
-        return 'initialized'
+        return init()
     else:
         return 'error'
 

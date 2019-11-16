@@ -31,9 +31,10 @@ class Tree:
         return new_file
 
     def delete_file(self, name):
-        for i in self.files:
-            if i.name == name:
-                self.files.remove(i)
+        for file in self.files:
+            if file.name == name:
+                self.files.remove(file)
+                del file
                 break
         print('File to be deleted is not exist:', name)
 
@@ -52,11 +53,3 @@ class File:
         info = 'Name: ' + str(self.name) + '\n' + 'Size: ' + str(self.size) + ' bytes' + '\n' + 'Path: ' + \
                str(self.path) + '\n' + 'Modified: ' + str(self.last_mod)
         return info
-
-
-root = Tree('root', '/')
-root.add_dir('b1', '/b1')
-root.add_dir('b2', '/b2')
-root.add_file('first', '/first.txt', 70614)
-root.delete_file('firstt')
-print(root.files[0].info())
