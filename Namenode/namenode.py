@@ -52,15 +52,15 @@ def login_user(log_in, password):
 
 
 def send_file():
-    storagenode_ip = '127.0.0.1'
+    storagenode_ip = '188.130.155.153'
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storagenode_ip, 8080))
-    message = 'recive_file'
+    tcp_socket.connect((storagenode_ip, 8000))
+    message = 'receive'
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
     if status == 'ok':
-        return storagenode_ip, 8080
+        return storagenode_ip, 8800
     else:
         return storagenode_ip
 

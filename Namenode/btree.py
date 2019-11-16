@@ -1,8 +1,10 @@
 from treelib import Node, Tree
 
+
 def add_user(user_name, current_tree):
-	current_tree.create_node(user_name, user_name, parent = "fs")
+	current_tree.create_node(user_name, user_name, parent="fs")
 	return current_tree
+
 
 def restore_path(current_tree, dir):
 	dir = dir.split('/')
@@ -14,6 +16,7 @@ def restore_path(current_tree, dir):
 			current_tree.create_node(dir[i], dir[i], parent=dir[i-1])
 	return current_tree
 
+
 #def add_file(where_to, filename): 
 def add_node_loc(current_tree, dir_name):
 
@@ -21,7 +24,7 @@ def add_node_loc(current_tree, dir_name):
 	node = current_tree.get_node(dir_name[-1])
 
 	print(node)
-	if(node):
+	if node:
 		print("Found it at the tree")
 	else:
 		current_tree.create_node(dir_name[-1], dir_name[-1], parent = dir_name[-2])
@@ -43,4 +46,3 @@ if __name__ == '__main__':
 
 
 	#placeholder id
-	
