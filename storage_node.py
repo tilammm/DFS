@@ -2,10 +2,13 @@ import socket
 import threading
 from threading import Thread
 from _thread import *
+import os
+
 
 files = []
 clients = []
 print_lock = threading.Lock()
+root_directory = '/home/tilammm/PycharmProjects/DFS/files/'
 
 
 class ClientListener(Thread):
@@ -13,76 +16,57 @@ class ClientListener(Thread):
         super().__init__(daemon=True)
         self.sock = sock
         self.name = name
-        self.filename_known = False
-        self.filename_buffer = ''
-        self.final_filename = ''
-        self.filedata_buffer = b''
 
+    # add 'me> ' to sended message
+    def _clear_echo(self, data):
+        # \033[F – symbol to move the cursor at the beginning of current line (Ctrl+A)
+        # \033[K – symbol to clear everything till the end of current line (Ctrl+K)
+        self.sock.sendall('\033[F\033[K'.encode())
+        data = 'me> '.encode() + data
+        # send the message back to user
+        self.sock.sendall(data)
+
+    # broadcast the message with name prefix eg: 'u1> '
+    def _broadcast(self, data):
+        data = (self.name + '> ').encode() + data
+        for u in clients:
+            # send to everyone except current client
+            if u == self.sock:
+                continue
+            u.sendall(data)
+
+    # clean up
     def _close(self):
         clients.remove(self.sock)
         self.sock.close()
         print(self.name + ' disconnected')
 
     def run(self):
-        while True:
-
-            if not self.filename_known:
-                
-                name_data = self.sock.recv(1024)
-                self.filename_buffer += name_data.decode()
-                self.filename_buffer.replace('?', '')
-
-                self.filename_known = True
-                print('Filename is ' + self.filename_buffer)
-            
-                self.sock.sendall('1'.encode())
-
-                if self.filename_buffer in files:
-
-                    print('Collision occured!')
-                    i = len(self.filename_buffer) - 1
-
-                    while not self.filename_buffer[i] == '.':
-                        if i == 0:
-                            break
-                        i -= 1
-                        
-                    if i == 0:
-                        file_name = self.filename_buffer
-                        file_extension = ''
-                    else:
-                        file_name = self.filename_buffer[:i]
-                        file_extension = self.filename_buffer[i:]
-
-                    copy_num = 1
-
-                    while (file_name + '_copy' + str(copy_num) + file_extension) in files:
-                        copy_num += 1
-
-                    self.final_filename = file_name + '_copy' + str(copy_num) + file_extension
-
-                    files.append(self.final_filename)
-                    print('New file name is ' + self.final_filename)
+        filename = self.sock.recv(128).decode()
+        filename = root_directory + filename
+        i = 1
+        if os.path.isfile(filename):
+            while True:
+                index = filename.rindex('.')
+                if os.path.isfile(filename[:index] + '(Copy_' + str(i) + ')' + filename[index:]):
+                    i += 1
                 else:
-
-                    print('No collision occured.')
-                    files.append(self.filename_buffer)
-                    self.final_filename = self.filename_buffer
-            else:
-
-                file_data = self.sock.recv(64)
-                
-                if file_data:
-                    self.filedata_buffer += file_data
+                    filename = filename[:index] + '(Copy_' + str(i) + ')' + filename[index:]
+                    break
+        with open(filename, 'wb') as f:
+            message = f'{filename} created'
+            print(message)
+            self.sock.send('1'.encode())
+            while True:
+                # try to read 1024 bytes from user
+                # this is blocking call, thread will be paused here
+                data = self.sock.recv(128)
+                if data:
+                    f.write(data)
                 else:
-
-                    current = self.final_filename.split('/')
-                    current_file = current[len(current) - 1]
-                    f = open(current_file, 'wb+')
-                    f.write(self.filedata_buffer)
-                    f.close()
-                    print('File ' + current_file + ' from ' + self.name + ' was received.')
+                    # if we got no data – client has disconnected
                     self._close()
+                    # finish the thread
                     return
 
 
@@ -104,8 +88,8 @@ def receive(port, connection):
         name = 'u' + str(next_name)
         next_name += 1
         print(str(addr) + ' connected as ' + name)
-
-        ClientListener(name, con).start()
+        print(name, con)
+        ClientListener(name=name, sock=con).start()
 
 
 def init():
@@ -113,6 +97,7 @@ def init():
 
 
 def command_handler(message, connection):
+    print(message)
     if message == 'receive':
         receive(8800, connection)
         return 'received'
@@ -152,5 +137,3 @@ if __name__ == '__main__':
         con, addr = sock.accept()
 
         start_new_thread(threaded, (con, addr))
-
-
