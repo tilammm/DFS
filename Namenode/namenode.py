@@ -2,7 +2,7 @@ import socket
 from _thread import *
 import threading
 import psycopg2
-
+from .tree import Tree
 
 try:
     connection = psycopg2.connect(user="test",
@@ -67,11 +67,11 @@ def send_file(storage_node_ip, storage_node_port):
 def send_init(storage_node_ip, storage_node_port):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'receive'
+    message = 'init'
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
-    return  status
+    return status
 
 
 def command_handler(message):
@@ -85,9 +85,10 @@ def command_handler(message):
         out = str(register_user(words[1], words[2], words[3]))
     elif words[0] == 'write':
         storagenode_ip, storagenode_port = send_file(storage_node_ip, storage_node_port)
-        out = storagenode_ip + ':' + str(storagenode_port)
+        out = storagenode_ip + ':' + str(8800)
     elif words[0] == 'init':
         out = send_init(storage_node_ip, storage_node_port)
+
     return out
 
 
