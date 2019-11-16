@@ -47,9 +47,6 @@ class ClientListener(Thread):
                             break
                         i -= 1
                         
-                    file_name = ''
-                    file_extension = ''
-                        
                     if i == 0:
                         file_name = self.filename_buffer
                         file_extension = ''
