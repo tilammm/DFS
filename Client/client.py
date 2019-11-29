@@ -1,6 +1,8 @@
 import socket
 import getpass
 import os
+import sys
+import readline
 
 namenode_ip = '127.0.0.1'
 namenode_port = 5005
@@ -24,29 +26,26 @@ def send(filename, ip, port):
     file_size = f.tell()
     f.seek(old_file_position, os.SEEK_SET)
 
-    i = 1
-    buff = b''
-    while True:
+    bytes_transported = 128
 
-        byte = f.read(1)
+    percent = 0
 
-        if byte == b'':
-            sock.sendall(buff)
-            break
-        else:
+    byte = f.read(128)
 
-            if i % 128 == 0:
+    while byte:
 
-                buff += byte
-                sock.sendall(buff)
-                buff = b''
-                i += 1
-            else:
-                buff += byte
-                i += 1
+        if bytes_transported * 100 // file_size > percent:
+            percent = bytes_transported * 100 // file_size
+            if percent > 100:
+                percent = 100
+            sys.stdout.flush()
+            sys.stdout.write(f'\r{percent}%')
 
-    print('The file has been sent')
-
+        bytes_transported += 128
+        sock.send(byte)
+        byte = f.read(128)
+    print()
+    sock.close()
     f.close()
 
 
@@ -73,7 +72,6 @@ def log_in():
     tcp_socket.send(message.encode())
     data = tcp_socket.recv(buffer_size)
     tcp_socket.close()
-    print(data.decode())
     return data
 
 
@@ -85,21 +83,39 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
         storage_node = data.split(':')
-        print(storage_node)
         send(commands[1], storage_node[0], str(storage_node[1]))
+        data = 'The file has been sent'
+    elif commands[0] == 'initialize':
+        message = commands[0]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+    else:
+        data = 'unknown command'
     tcp_socket.close()
     return data
 
 
-if __name__ == '__main__':
-    act = input('Want to login or register?(login/register)').lower()
+def start():
+    act = input('Want to login or register?(login/register): ').lower()
     if act == 'login':
         client_id = log_in()
     elif act == 'register':
         client_id = registration()
+    else:
+        print('Unknown command. Try again')
+        start()
+
+
+if __name__ == '__main__':
+    start()
+
+    current_dir = 'root'
+
+    # Readline сustomization
+
+    readline.parse_and_bind('tab: complete')
 
     while True:
-        command = input().lower().split()
-        print(send_command(command).decode())
+        command = input(current_dir + ': ').lower().split()
+        print(send_command(command))
 
-print("hello")
