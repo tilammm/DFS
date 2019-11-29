@@ -19,13 +19,35 @@ class Tree:
             child.delete_self()
         del self
 
-    def add_dir(self, name, path):
+    def add_dir(self, name, path=None):
+        for dir in self.dirs:
+            if dir.name == name:
+                return 'Directory exists'
+        path = self.path + name + '/'
         new_dir = Tree(name, path, parent=self)
         self.dirs.append(new_dir)
-        return new_dir
+        return 'ok'
 
-    def add_file(self, name, path, size, storage):
-        new_file = File(name, path, size, storage, self)
+    def add_file(self, name, size, storage):
+        # correct name
+        candidate = name
+        duplicate = False
+        for file in self.files:
+            if name == file.name:
+                duplicate = True
+        i = 1
+        while duplicate:
+            duplicate = False
+            index = name.rindex('.')
+            candidate = name[:index] + '(Copy_' + str(i) + ')' + name[index:]
+            for file in self.files:
+                if candidate == file.name:
+                    duplicate = True
+        i += 1
+
+        # new file to list
+        path = self.path + candidate
+        new_file = File(candidate, path, size, storage, self)
         self.files.append(new_file)
         return new_file
     
@@ -59,10 +81,16 @@ class Tree:
         else:
             print('File to be deleted does not exist:', name)
 
+    def get_files(self):
+        result = []
+        for file in self.files:
+            result.append(file.name)
+        return result
+
 
 class File:
 
-    def __init__(self, name, path, size, storages, parent=None):
+    def __init__(self, name, path, size=0, storages=[], parent=None):
         self.parent = parent
         self.name = name
         self.path = path
@@ -75,14 +103,3 @@ class File:
                str(self.path) + '\n' + 'Modified: ' + str(self.last_mod)
         return info
 
-storages = []
-
-root = Tree('root', '/')
-root.add_dir('n1', '/n1')
-root.add_dir('n2', '/n2')
-node_2 = root.get_path_entity('/n2')
-node_1 = root.get_path_entity('/n1')
-node_2.add_file('first', '/first.txt', 70614, 'n2')
-print(node_1.files)
-#root.replicate('first')
-#print(root.files[0].info())

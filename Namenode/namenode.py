@@ -77,26 +77,58 @@ def send_init(storage_node_ip, storage_node_port):
     return status
 
 
+def mkdir(dir_name, storage_node_ip, storage_node_port):
+    # add dir to tree
+    global current_directory
+    status = current_directory.add_dir(name=dir_name)
+    if status != 'ok':
+        return status
+
+    # send command to storage node
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((storage_node_ip, storage_node_port))
+    message = 'mkdir:' + current_directory.path + dir_name
+    tcp_socket.send(message.encode())
+    response = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+    return 'Directory created: ' + dir_name
+
+
 def command_handler(message):
     print(message)
     words = message.split(':')
     storage_node_ip = '127.0.0.1'
     storage_node_port = 8000
+
     global file_tree
     global current_directory
+
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
+
     elif words[0] == 'write':
-        storagenode_ip, storagenode_port = send_file(storage_node_ip, storage_node_port)
-        out = storagenode_ip + ':' + storagenode_port
+        # add file to tree
+        filename = words[1]
+        size = words[2]
+        current_directory.add_file(name=filename, size=size, storage=[storage_node_ip])
+        print(current_directory.get_files())
+        # opening of port on storage node
+        _, storagenode_port = send_file(storage_node_ip, storage_node_port)
+        out = storage_node_ip + ':' + storagenode_port
+
     elif words[0] == 'read':
         storagenode_ip, storagenode_port = read_file(storage_node_ip, storage_node_port)
         out = storagenode_ip + ':' + storagenode_port
+
+    elif words[0] == 'mkdir':
+         out = mkdir(words[1], storage_node_ip, storage_node_port)
+
     elif words[0] == 'initialize':
         file_tree.delete_dir()
         file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
         current_directory = file_tree
         out = send_init(storage_node_ip, storage_node_port)
+
     else:
         out = 'unknown command'
 

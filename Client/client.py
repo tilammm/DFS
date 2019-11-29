@@ -9,30 +9,52 @@ namenode_port = 5005
 buffer_size = 128
 
 
-def send(filename, ip, port):
+# get filename from filepath
+def get_name(filepath):
+    subnames = filepath.split('/')
+
+    return subnames.pop()
+
+
+def send(tcp_sock, filename):
     f = open(filename, "rb")
-    subnames = filename.split('/')
-    print(subnames)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.connect((ip, int(port)))
-    sock.sendall(subnames.pop().encode())
 
-    print('Waiting for the response...')
-    response = sock.recv(1)
-    print('Response was received')
-
-    old_file_position = f.tell()
-    f.seek(0, os.SEEK_END)
     file_size = f.tell()
     if file_size == 0:
         file_size = 1
+
+    # sending data  to namenode
+    name = get_name(filename)
+    message = 'write:' + name + ':' + str(buffer_size)
+
+    tcp_sock.send(message.encode())
+    data = tcp_sock.recv(buffer_size).decode()
+    storage_node = data.split(':')
+
+
+    ip = storage_node[0]
+    port = storage_node[1]
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.connect((ip, int(port)))
+
+    global current_dir
+    name = current_dir + '/' + name
+    sock.sendall(name.encode())
+
+    response = sock.recv(128)
+    print(response.decode())
+
+    old_file_position = f.tell()
+    f.seek(0, os.SEEK_END)
     f.seek(old_file_position, os.SEEK_SET)
 
     bytes_transported = 128
 
     percent = 0
 
+    # transfering of data to storagenode
     byte = f.read(128)
 
     while byte:
@@ -48,6 +70,7 @@ def send(filename, ip, port):
         sock.send(byte)
         byte = f.read(128)
     print()
+
     sock.close()
     f.close()
 
@@ -56,7 +79,10 @@ def read(filename, ip, port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((ip, int(port)))
-    sock.sendall(filename.encode())
+
+    global current_dir
+    path_on_storage = current_dir + '/' + filename
+    sock.sendall(path_on_storage.encode())
 
     print('Waiting for the response...')
     file_size = int(sock.recv(buffer_size))
@@ -115,13 +141,11 @@ def log_in():
 def send_command(commands):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((namenode_ip, namenode_port))
+
     if commands[0] == 'write':
-        message = commands[0]
-        tcp_socket.send(message.encode())
-        data = tcp_socket.recv(buffer_size).decode()
-        storage_node = data.split(':')
-        send(commands[1], storage_node[0], str(storage_node[1]))
+        send(tcp_socket, commands[1])
         data = 'The file has been sent'
+
     elif commands[0] == 'read':
         message = commands[0]
         tcp_socket.send(message.encode())
@@ -129,10 +153,17 @@ def send_command(commands):
         storage_node = data.split(':')
         read(commands[1], storage_node[0], str(storage_node[1]))
         data = 'The file has been read'
+
+    elif commands[0] == 'mkdir':
+        message = commands[0] + ':' + commands[1]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+
     elif commands[0] == 'initialize':
         message = commands[0]
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
+
     else:
         data = 'unknown command'
     tcp_socket.close()
@@ -153,7 +184,7 @@ def start():
 if __name__ == '__main__':
     start()
 
-    current_dir = 'root'
+    current_dir = 'files'
 
     # Readline сustomization
 
