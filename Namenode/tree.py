@@ -93,6 +93,12 @@ class Tree:
             result.append(dir.name)
         return result
 
+    def open(self, name):
+        for dir in self.dirs:
+            if dir.name == name:
+                return dir
+        return None
+
 
 class File:
 

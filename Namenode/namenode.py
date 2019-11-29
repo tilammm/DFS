@@ -33,8 +33,14 @@ number_of_users = 1
 def login_user(log_in, password):
     query = 'select * from client where username = %s'
     print(log_in)
+
     cursor.execute(query, (log_in, ))
     users = cursor.fetchall()
+
+    global current_directory
+    global file_tree
+    current_directory = file_tree
+
     if len(users) == 0:
         return 0
     else:
@@ -122,6 +128,19 @@ def command_handler(message, conn):
 
     elif words[0] == 'mkdir':
          out = mkdir(words[1], storage_node_ip, storage_node_port)
+
+    elif words[0] == 'open':
+        out = 'error'
+        global file_tree
+        if len(words) == 1:
+            if current_directory != file_tree:
+                current_directory = current_directory.parent
+                out = current_directory.path
+        else:
+            new_dir = current_directory.open(words[1])
+            if new_dir is not None:
+                current_directory = new_dir
+                out = current_directory.path
 
     elif words[0] == 'show':
 

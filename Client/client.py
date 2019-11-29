@@ -164,6 +164,19 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
 
+    elif commands[0] == 'open':
+        if len(commands) == 2:
+            message = commands[0] + ':' + command[1]
+        else:
+            message = commands[0]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+        if data != 'error':
+            global current_dir
+            current_dir = data[:len(data) - 1]  # remove '/'
+        else:
+            data = 'Can not open this file'
+
     elif commands[0] == 'show':
         message = commands[0]
         tcp_socket.send(message.encode())
@@ -197,6 +210,8 @@ def start():
 
 
 if __name__ == '__main__':
+
+    sys.stdout.write('\033[1;36m')
     start()
 
     current_dir = 'files'
@@ -206,7 +221,9 @@ if __name__ == '__main__':
     readline.parse_and_bind('tab: complete')
 
     while True:
+        sys.stdout.write('\033[1;36m')
         command = input(current_dir + ': ').split()
+        sys.stdout.write('\033[0;0m')
         print()
         print(send_command(command))
         print()
