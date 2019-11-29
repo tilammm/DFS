@@ -160,6 +160,6 @@ if __name__ == '__main__':
     readline.parse_and_bind('tab: complete')
 
     while True:
-        command = input(current_dir + ': ').lower().split()
+        command = input(current_dir + ': ').split()
         print(send_command(command))
 
