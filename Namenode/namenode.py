@@ -30,16 +30,6 @@ print_lock = threading.Lock()
 number_of_users = 1
 
 
-def register_user(login, email, password):
-    query = 'INSERT INTO client(client_id, username, password, email) VALUES (%s, %s, %s, %s) RETURNING client_id'
-    print(login)
-    global number_of_users
-    cursor.execute(query, (number_of_users + 1, login, email, password, ))
-    user_id = cursor.fetchall()
-    number_of_users += 1
-    return user_id[0][0]
-
-
 def login_user(log_in, password):
     query = 'select * from client where username = %s'
     print(log_in)
@@ -58,8 +48,21 @@ def send_file(storage_node_ip, storage_node_port):
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
-    if status == 'ok':
-        return storage_node_ip, storage_node_port
+    if status != 'error':
+        return storage_node_ip, status
+    else:
+        return storage_node_ip
+
+
+def read_file(storage_node_ip, storage_node_port):
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((storage_node_ip, storage_node_port))
+    message = 'reading'
+    tcp_socket.send(message.encode())
+    status = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+    if status != 'error':
+        return storage_node_ip, status
     else:
         return storage_node_ip
 
@@ -83,11 +86,12 @@ def command_handler(message):
     global current_directory
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
-    elif words[0] == 'register':
-        out = str(register_user(words[1], words[2], words[3]))
     elif words[0] == 'write':
         storagenode_ip, storagenode_port = send_file(storage_node_ip, storage_node_port)
-        out = storagenode_ip + ':' + str(8800)
+        out = storagenode_ip + ':' + storagenode_port
+    elif words[0] == 'read':
+        storagenode_ip, storagenode_port = read_file(storage_node_ip, storage_node_port)
+        out = storagenode_ip + ':' + storagenode_port
     elif words[0] == 'initialize':
         file_tree.delete_dir()
         file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')

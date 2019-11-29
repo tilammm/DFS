@@ -9,7 +9,7 @@ import shutil
 files = []
 clients = []
 print_lock = threading.Lock()
-root_directory = 'Storage_node/files/'
+root_directory = 'files/'
 
 
 class ClientListener(Thread):
@@ -71,17 +71,71 @@ class ClientListener(Thread):
                     return
 
 
-def receive(port, connection):
-    connection.send('ok'.encode())
+class ClientReader(Thread):
+    def __init__(self, name: str, sock: socket.socket):
+        super().__init__(daemon=True)
+        self.sock = sock
+        self.name = name
+
+    # add 'me> ' to sended message
+    def _clear_echo(self, data):
+        # \033[F – symbol to move the cursor at the beginning of current line (Ctrl+A)
+        # \033[K – symbol to clear everything till the end of current line (Ctrl+K)
+        self.sock.sendall('\033[F\033[K'.encode())
+        data = 'me> '.encode() + data
+        # send the message back to user
+        self.sock.sendall(data)
+
+    # broadcast the message with name prefix eg: 'u1> '
+    def _broadcast(self, data):
+        data = (self.name + '> ').encode() + data
+        for u in clients:
+            # send to everyone except current client
+            if u == self.sock:
+                continue
+            u.sendall(data)
+
+    # clean up
+    def _close(self):
+        clients.remove(self.sock)
+        self.sock.close()
+        print(self.name + ' disconnected')
+
+    def run(self):
+        filename = self.sock.recv(128).decode()
+        filename = root_directory + filename
+        f = open(filename, 'rb')
+        print(f)
+        file_size = f.tell()
+        print(file_size)
+        self.sock.send(str(file_size).encode())
+
+        print('Waiting for the response...')
+        receive = self.sock.recv(1)
+        print('Response was received')
+
+        with open(filename, 'rb') as f:
+            byte = f.read(128)
+
+            while byte:
+
+                self.sock.send(byte)
+                byte = f.read(128)
+        f.close()
+        self._close()
+        return
+
+
+def receive(connection):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(('', 0))
+    sock.listen()
+    connection.send(str(sock.getsockname()[1]).encode())
 
     print('Server is ready for users')
 
     next_name = 1
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('', int(port)))
-    sock.listen()
 
     while True:
         con, addr = sock.accept()
@@ -93,6 +147,27 @@ def receive(port, connection):
         ClientListener(name=name, sock=con).start()
 
 
+def reading(connection):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(('', 0))
+    sock.listen()
+
+    connection.send(str(sock.getsockname()[1]).encode())
+
+    print('Server is ready for sending')
+
+    next_name = 1
+    while True:
+        con, addr = sock.accept()
+        clients.append(con)
+        name = 'u' + str(next_name)
+        next_name += 1
+        print(str(addr) + ' connected as ' + name)
+        print(name, con)
+        ClientReader(name=name, sock=con).start()
+
+
 def init():
     shutil.rmtree(path=root_directory, ignore_errors=True)
     os.mkdir(root_directory)
@@ -102,8 +177,11 @@ def init():
 def command_handler(message, connection):
     print(message)
     if message == 'receive':
-        receive(8800, connection)
+        receive(connection)
         return 'received'
+    elif message == 'reading':
+        reading(connection)
+        return 'reading'
     elif message == 'init':
         return init()
     else:
@@ -122,7 +200,6 @@ def threaded(connection, address):
 
         data = command_handler(data.decode(), connection)
         print(data)
-        connection.send(data.encode())
         # connection closed
     connection.close()
 
