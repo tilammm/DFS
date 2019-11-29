@@ -47,7 +47,6 @@ class Tree:
                     continue
         return current
 
-
     def delete_file(self, name):
         deleted = 0
         for i in self.files:

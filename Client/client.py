@@ -11,11 +11,12 @@ buffer_size = 128
 
 def send(filename, ip, port):
     f = open(filename, "rb")
-
+    subnames = filename.split('/')
+    print(subnames)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((ip, int(port)))
-    sock.sendall(filename.encode())
+    sock.sendall(subnames.pop().encode())
 
     print('Waiting for the response...')
     response = sock.recv(1)
@@ -97,7 +98,6 @@ def read(filename, ip, port):
         f.close()
         message = f'{filename} received'
         return message
-
 
 
 def log_in():
