@@ -168,9 +168,10 @@ def reading(connection):
         ClientReader(name=name, sock=con).start()
 
 
-def init():
+def init(conn):
     shutil.rmtree(path=root_directory, ignore_errors=True)
     os.mkdir(root_directory)
+    conn.send('Initialized'.encode())
     return 'Initialized'
 
 
@@ -183,7 +184,7 @@ def command_handler(message, connection):
         reading(connection)
         return 'reading'
     elif message == 'init':
-        return init()
+        return init(connection)
     else:
         return 'error'
 
