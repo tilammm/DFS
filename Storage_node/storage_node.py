@@ -9,7 +9,7 @@ import shutil
 files = []
 clients = []
 print_lock = threading.Lock()
-root_directory = 'Storage_node/files/'
+root_directory = 'files/'
 
 
 class ClientListener(Thread):

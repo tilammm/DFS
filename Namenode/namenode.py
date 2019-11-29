@@ -30,16 +30,6 @@ print_lock = threading.Lock()
 number_of_users = 1
 
 
-def register_user(login, email, password):
-    query = 'INSERT INTO client(client_id, username, password, email) VALUES (%s, %s, %s, %s) RETURNING client_id'
-    print(login)
-    global number_of_users
-    cursor.execute(query, (number_of_users + 1, login, email, password, ))
-    user_id = cursor.fetchall()
-    number_of_users += 1
-    return user_id[0][0]
-
-
 def login_user(log_in, password):
     query = 'select * from client where username = %s'
     print(log_in)
@@ -83,8 +73,6 @@ def command_handler(message):
     global current_directory
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
-    elif words[0] == 'register':
-        out = str(register_user(words[1], words[2], words[3]))
     elif words[0] == 'write':
         storagenode_ip, storagenode_port = send_file(storage_node_ip, storage_node_port)
         out = storagenode_ip + ':' + str(8800)
