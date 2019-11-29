@@ -87,6 +87,12 @@ class Tree:
             result.append(file.name)
         return result
 
+    def get_dirs(self):
+        result = []
+        for dir in self.dirs:
+            result.append(dir.name)
+        return result
+
 
 class File:
 

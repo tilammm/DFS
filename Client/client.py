@@ -164,6 +164,21 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
 
+    elif commands[0] == 'show':
+        message = commands[0]
+        tcp_socket.send(message.encode())
+
+        directories = tcp_socket.recv(buffer_size).decode()
+        tcp_socket.send('1'.encode())
+        files = tcp_socket.recv(buffer_size).decode()
+
+        directories = directories.replace(':', '   ')
+        print('Directories: ')
+        print(directories)
+
+        print('Files:')
+        data = files.replace(':', '   ')
+
     else:
         data = 'unknown command'
     tcp_socket.close()
@@ -192,5 +207,7 @@ if __name__ == '__main__':
 
     while True:
         command = input(current_dir + ': ').split()
+        print()
         print(send_command(command))
+        print()
 

@@ -94,7 +94,7 @@ def mkdir(dir_name, storage_node_ip, storage_node_port):
     return 'Directory created: ' + dir_name
 
 
-def command_handler(message):
+def command_handler(message, conn):
     print(message)
     words = message.split(':')
     storage_node_ip = '127.0.0.1'
@@ -123,6 +123,23 @@ def command_handler(message):
     elif words[0] == 'mkdir':
          out = mkdir(words[1], storage_node_ip, storage_node_port)
 
+    elif words[0] == 'show':
+
+        directories = current_directory.get_dirs()
+        dirs = ':'
+        for dir in directories:
+            dirs += dir + ':'
+
+        conn.send(dirs.encode())
+
+        response = conn.recv(1)
+
+        files = current_directory.get_files()
+        out = ':'
+
+        for file in files:
+            out += file + ':'
+
     elif words[0] == 'initialize':
         file_tree.delete_dir()
         file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
@@ -145,7 +162,7 @@ def threaded(connection, address):
             print_lock.release()
             break
 
-        data = command_handler(data.decode())
+        data = command_handler(data.decode(), connection)
         print(data)
         connection.send(data.encode())
         # connection closed
