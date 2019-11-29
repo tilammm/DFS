@@ -120,7 +120,7 @@ if __name__ == '__main__':
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.bind((ip, port))
     tcp_socket.listen()
-    file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
+    file_tree = Tree(name='root', path='files/')
     current_directory = file_tree
     while True:
         # establish connection with client
