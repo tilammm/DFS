@@ -9,7 +9,7 @@ import shutil
 files = []
 clients = []
 print_lock = threading.Lock()
-root_directory = '/home/tilammm/PycharmProjects/DFS/files/'
+root_directory = 'Storage_node/files/'
 
 
 class ClientListener(Thread):
