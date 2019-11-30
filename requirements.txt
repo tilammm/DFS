@@ -1,0 +1,7 @@
+BTrees==4.6.1
+cffi==1.13.2
+persistent==4.5.1
+psycopg2==2.8.4
+pycparser==2.19
+treelib==1.5.5
+zope.interface==4.7.1
