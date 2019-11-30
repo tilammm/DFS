@@ -13,11 +13,16 @@ class Tree:
         self.number_of_file = 0
 
     def delete_dir(self):
+        if self.parent is None:
+            return 'Can not delete root directory'
         for file in self.files:
             del file
         for child in self.dirs:
             child.delete_self()
+        parent = self.parent
+        parent.dirs.remove(self)
         del self
+        return parent
 
     def add_dir(self, name, path=None):
         for dir in self.dirs:
@@ -70,16 +75,14 @@ class Tree:
         return current
 
     def delete_file(self, name):
-        deleted = 0
-        for i in self.files:
-            if i.name == name:
-                self.files.remove(i)
-                deleted = 1
+        result = 'can not delete file'
+        for file in self.files:
+            if file.name == name:
+                self.files.remove(file)
+                result = 'ok'
+                del file
                 break
-        if deleted == 1:
-            print("File was deleted")
-        else:
-            print('File to be deleted does not exist:', name)
+        return result
 
     def get_files(self):
         result = []

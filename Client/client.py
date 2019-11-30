@@ -159,6 +159,13 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
 
+    elif commands[0] == 'filerm':
+        message = commands[0] + ':' + commands[1]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+        if data == 'error':
+            data = 'Can not remove this file'
+
     elif commands[0] == 'initialize':
         message = commands[0]
         tcp_socket.send(message.encode())
@@ -175,7 +182,7 @@ def send_command(commands):
             global current_dir
             current_dir = data[:len(data) - 1]  # remove '/'
         else:
-            data = 'Can not open this file'
+            data = 'Can not open this directory'
 
     elif commands[0] == 'show':
         message = commands[0]
@@ -227,4 +234,3 @@ if __name__ == '__main__':
         print()
         print(send_command(command))
         print()
-

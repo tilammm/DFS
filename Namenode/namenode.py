@@ -23,10 +23,8 @@ except (Exception, psycopg2.Error) as error:
     print("Error while connecting to PostgreSQL", error)
 
 
-ip = '127.0.0.1'
-port = 5005
+
 buffer_size = 1024
-print_lock = threading.Lock()
 number_of_users = 1
 
 
@@ -97,7 +95,31 @@ def mkdir(dir_name, storage_node_ip, storage_node_port):
     tcp_socket.send(message.encode())
     response = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
-    return 'Directory created: ' + dir_name
+    if response == 'created':
+        return 'Directory created: ' + dir_name
+    else:
+        return 'error'
+
+
+def filerm(file_name, storage_node_ip, storage_node_port):
+    # delete file from tree
+    global current_directory
+    status = current_directory.delete_file(file_name)
+
+    if status != 'ok':
+        return status
+
+    # send command to storage node
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((storage_node_ip, storage_node_port))
+    message = 'filerm:' + current_directory.path + file_name
+    tcp_socket.send(message.encode())
+    response = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+    if response == 'removed':
+        return 'File deleted: ' + file_name
+    else:
+        return 'error'
 
 
 def command_handler(message, conn):
@@ -128,6 +150,9 @@ def command_handler(message, conn):
 
     elif words[0] == 'mkdir':
          out = mkdir(words[1], storage_node_ip, storage_node_port)
+
+    elif words[0] == 'filerm':
+         out = filerm(words[1], storage_node_ip, storage_node_port)
 
     elif words[0] == 'open':
         out = 'error'
@@ -189,11 +214,17 @@ def threaded(connection, address):
 
 
 if __name__ == '__main__':
+    ip = '127.0.0.1'
+    port = 5005
+    print_lock = threading.Lock()
+
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.bind((ip, port))
     tcp_socket.listen()
+
     file_tree = Tree(name='root', path='files/')
     current_directory = file_tree
+
     while True:
         # establish connection with client
         conn, addr = tcp_socket.accept()

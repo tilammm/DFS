@@ -8,7 +8,6 @@ import shutil
 
 files = []
 clients = []
-print_lock = threading.Lock()
 root_directory = 'files/'
 
 
@@ -180,8 +179,15 @@ def init(conn):
 def mkdir(dir_name, conn):
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
-    conn.send('Initialized'.encode())
+    conn.send('created'.encode())
     return 'Created'
+
+
+def filerm(file_name, conn):
+    if os.path.exists(file_name):
+        os.remove(file_name)
+    conn.send('removed'.encode())
+    return 'Removed'
 
 
 def command_handler(messages, connection):
@@ -196,6 +202,8 @@ def command_handler(messages, connection):
         return init(connection)
     elif messages[0] == 'mkdir':
         return mkdir(messages[1], connection)
+    elif messages[0] == 'filerm':
+        return filerm(messages[1], connection)
     else:
         return 'error'
 
@@ -206,8 +214,6 @@ def threaded(connection, address):
         data = connection.recv(1024)
         if not data:
             print(f'Connection with {address[0]} closed')
-            # lock released on exit
-            print_lock.release()
             break
         commands = data.decode().split(':')
         data = command_handler(commands, connection)
