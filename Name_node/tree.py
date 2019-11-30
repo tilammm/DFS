@@ -48,7 +48,7 @@ class Tree:
             for file in self.files:
                 if candidate == file.name:
                     duplicate = True
-        i += 1
+            i += 1
 
         # new file to list
         path = self.path + candidate
@@ -62,17 +62,17 @@ class Tree:
                 print('Found ' + i.name)
     
     def get_path_entity(self, path):
-        path_array = path.split("/")[1:]
+        path_array = path.split("/")
         current = self
         for j in path_array:
             for i in current.dirs:
-                print(i.name)
                 if i.name == j:
                     current = i
                     break
-                else:
-                    continue
-        return current
+        if current.path == path or current.path[:len(current.path) - 1] == path:
+            return current
+        else:
+            return None
 
     def delete_file(self, name):
         result = 'can not delete file'
@@ -83,6 +83,12 @@ class Tree:
                 del file
                 break
         return result
+
+    def get_file(self, name):
+        for file in self.files:
+            if file.name == name:
+                return file
+        return None
 
     def get_files(self):
         result = []
