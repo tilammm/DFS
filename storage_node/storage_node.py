@@ -6,7 +6,6 @@ from _thread import *
 import os
 import shutil
 
-
 files = []
 clients = []
 root_directory = 'files/'
@@ -109,7 +108,12 @@ class ClientListener(Thread):
             while True:
                 # try to read 1024 bytes from user
                 # this is blocking call, thread will be paused here
-                data = self.sock.recv(128)
+                try:
+                    data = self.sock.recv(128)
+                except:
+                    self._close()
+                    # finish the thread
+                    return
                 if data:
                     f.write(data)
                 else:
@@ -166,7 +170,6 @@ class ClientReader(Thread):
             byte = f.read(128)
 
             while byte:
-
                 self.sock.send(byte)
                 byte = f.read(128)
         f.close()
