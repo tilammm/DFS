@@ -13,6 +13,7 @@ root_directory = 'files/'
 ip_extra = ''
 port_extra = ''
 
+
 def send(filename, ip, port):
     f = open(filename, "rb")
 
@@ -55,14 +56,12 @@ def send(filename, ip, port):
     f.close()
 
 
-
-
-
 class ClientListener(Thread):
-    def __init__(self, name: str, sock: socket.socket):
+    def __init__(self, name: str, sock: socket.socket, file: str):
         super().__init__(daemon=True)
         self.sock = sock
         self.name = name
+        self.file = file
 
     # add 'me> ' to sended message
     def _clear_echo(self, data):
@@ -89,8 +88,8 @@ class ClientListener(Thread):
         print(self.name + ' disconnected')
 
     def run(self):
-        filename = self.sock.recv(128).decode()
 
+        filename = self.file
         # correct name
         i = 1
         if os.path.isfile(filename):
@@ -117,10 +116,11 @@ class ClientListener(Thread):
                     # if we got no data – client has disconnected
                     self._close()
                     # finish the thread
-                    return filename
+                    return
 
 
 class ClientReader(Thread):
+
     def __init__(self, name: str, sock: socket.socket):
         super().__init__(daemon=True)
         self.sock = sock
@@ -174,9 +174,9 @@ class ClientReader(Thread):
         return
 
 
-def send_file(storage_node_ip, storage_node_port, storage_node_ip_extra, storage_node_port_extra):
+def send_file(storage_node_ip, storage_node_port):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
+    tcp_socket.connect((storage_node_ip, int(storage_node_port)))
     message = 'receive'
     tcp_socket.sendall(message.encode())
 
@@ -199,15 +199,17 @@ def receive(connection):
 
     next_name = 1
 
-    while True:
-        con, addr = sock.accept()
-        clients.append(con)
-        name = 'u' + str(next_name)
-        next_name += 1
-        print(str(addr) + ' connected as ' + name)
-        print(name, con)
-        file_path = ClientListener(name=name, sock=con).start()
-        return file_path
+    con, addr = sock.accept()
+    clients.append(con)
+    name = 'u' + str(next_name)
+    next_name += 1
+    print(str(addr) + ' connected as ' + name)
+    print(name, con)
+    filename = con.recv(128).decode()
+    ClientListener(name=name, sock=con, file=filename).start()
+    print(filename, 'filename')
+    return filename
+
 
 def reading(connection):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -260,18 +262,16 @@ def delete_dir(dir_path, conn):
 
 def command_handler(messages, connection):
     print(messages)
-    isFirst = False
-    if(len(messages) > 1 and messages[0] == 'receive'):
-        ip_extra, port_extra = messages[1], messages[2]
-        isFirst = True
-    if messages[0] == 'receive' and not isFirst:
-        receive(connection)
-        return 'received'
-    elif isFirst:
-        file_path = receive(connection)
-        _ , storagenode_port_extra = send_file(ip_extra, port_extra)
-        send(file_path, ip_extra, storagenode_port_extra)
-        return 'received'
+
+    if messages[0] == 'receive':
+        if len(messages) == 1:
+            receive(connection)
+            return 'received'
+        else:
+            file_path = receive(connection)
+            _, storagenode_port_extra = send_file(messages[1], messages[2])
+            send(file_path, messages[1], storagenode_port_extra)
+            return 'received'
     elif messages[0] == 'reading':
         reading(connection)
         return 'reading'
