@@ -133,9 +133,13 @@ def log_in():
     tcp_socket.connect((namenode_ip, namenode_port))
     message = 'login:' + nickname + ':' + password
     tcp_socket.send(message.encode())
-    data = tcp_socket.recv(buffer_size)
+    data = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
-    return data
+    if data == '1':
+        return data
+    else:
+        print('Uncorrect login or password, try again')
+        return log_in()
 
 
 def show(tcp_socket):

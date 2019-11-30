@@ -42,7 +42,10 @@ def login_user(log_in, password):
     if len(users) == 0:
         return 0
     else:
-        return users[0][0]
+        if users[0][2] == password:
+            return users[0][0]
+        else:
+            return 0
 
 
 def send_file(storage_node_ip, storage_node_port):
