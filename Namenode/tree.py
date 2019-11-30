@@ -14,11 +14,11 @@ class Tree:
 
     def delete_dir(self):
         if self.parent is None:
-            return 'Can not delete root directory'
+            return 'error'
         for file in self.files:
             del file
         for child in self.dirs:
-            child.delete_self()
+            child.delete_dir()
         parent = self.parent
         parent.dirs.remove(self)
         del self

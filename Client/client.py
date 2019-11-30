@@ -138,9 +138,22 @@ def log_in():
     return data
 
 
+def show(tcp_socket):
+    message = 'show'
+    tcp_socket.send(message.encode())
+
+    directories = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.send('1'.encode())
+    files = tcp_socket.recv(buffer_size).decode()
+
+    return directories.replace(':', '   '), files.replace(':', '   ')
+
+
 def send_command(commands):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((namenode_ip, namenode_port))
+
+    global current_dir
 
     if commands[0] == 'write':
         send(tcp_socket, commands[1])
@@ -166,7 +179,37 @@ def send_command(commands):
         if data == 'error':
             data = 'Can not remove this file'
 
+    elif commands[0] == 'dir_delete':
+        directories, files = show(tcp_socket)
+        directories = directories.split()
+        files = files.split()
+
+        if len(directories) == 0 and len(files) == 0:
+            message = commands[0]
+            tcp_socket.send(message.encode())
+            data = tcp_socket.recv(buffer_size).decode()
+            if data == 'error':
+                data = 'Can not remove this directory'
+            else:
+                current_dir = data[:len(data) - 1]
+        else:
+            print('Directory is not empty')
+            print(f'Directories: {directories}')
+            print(f'Files: {files}')
+            delete = input(f'Delete directory?(y/n)').lower()
+            if delete == 'y':
+                message = commands[0]
+                tcp_socket.send(message.encode())
+                data = tcp_socket.recv(buffer_size).decode()
+                if data == 'error':
+                    data = 'Can not remove this directory'
+                else:
+                    current_dir = data[:len(data) - 1]
+            else:
+                data = 'Directory will not be deleted'
+
     elif commands[0] == 'initialize':
+        current_dir = 'files'
         message = commands[0]
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
@@ -179,25 +222,16 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
         if data != 'error':
-            global current_dir
             current_dir = data[:len(data) - 1]  # remove '/'
         else:
             data = 'Can not open this directory'
 
     elif commands[0] == 'show':
-        message = commands[0]
-        tcp_socket.send(message.encode())
-
-        directories = tcp_socket.recv(buffer_size).decode()
-        tcp_socket.send('1'.encode())
-        files = tcp_socket.recv(buffer_size).decode()
-
-        directories = directories.replace(':', '   ')
+        directories, data = show(tcp_socket)
         print('Directories: ')
         print(directories)
 
         print('Files:')
-        data = files.replace(':', '   ')
 
     else:
         data = 'unknown command'
@@ -221,11 +255,11 @@ if __name__ == '__main__':
     sys.stdout.write('\033[1;36m')
     start()
 
-    current_dir = 'files'
-
     # Readline сustomization
 
     readline.parse_and_bind('tab: complete')
+
+    current_dir = 'files'
 
     while True:
         sys.stdout.write('\033[1;36m')

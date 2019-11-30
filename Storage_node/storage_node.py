@@ -190,6 +190,13 @@ def filerm(file_name, conn):
     return 'Removed'
 
 
+def delete_dir(dir_path, conn):
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+    conn.send('removed'.encode())
+    return 'Removed'
+
+
 def command_handler(messages, connection):
     print(messages)
     if messages[0] == 'receive':
@@ -204,6 +211,8 @@ def command_handler(messages, connection):
         return mkdir(messages[1], connection)
     elif messages[0] == 'filerm':
         return filerm(messages[1], connection)
+    elif messages[0] == 'del_dir':
+        return delete_dir(messages[1], connection)
     else:
         return 'error'
 

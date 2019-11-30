@@ -122,6 +122,27 @@ def filerm(file_name, storage_node_ip, storage_node_port):
         return 'error'
 
 
+def delete_dir(storage_node_ip, storage_node_port):
+    # delete file from tree
+    global current_directory
+
+    if current_directory.parent is None:
+        return 'error'
+
+    # send command to storage node
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((storage_node_ip, storage_node_port))
+    message = 'del_dir:' + current_directory.path
+    tcp_socket.send(message.encode())
+    response = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+    if response == 'removed':
+        current_directory = current_directory.delete_dir()
+        return current_directory.path
+    else:
+        return 'error'
+
+
 def command_handler(message, conn):
     print(message)
     words = message.split(':')
@@ -149,10 +170,10 @@ def command_handler(message, conn):
         out = storagenode_ip + ':' + storagenode_port
 
     elif words[0] == 'mkdir':
-         out = mkdir(words[1], storage_node_ip, storage_node_port)
+        out = mkdir(words[1], storage_node_ip, storage_node_port)
 
     elif words[0] == 'filerm':
-         out = filerm(words[1], storage_node_ip, storage_node_port)
+        out = filerm(words[1], storage_node_ip, storage_node_port)
 
     elif words[0] == 'open':
         out = 'error'
@@ -189,6 +210,9 @@ def command_handler(message, conn):
         file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
         current_directory = file_tree
         out = send_init(storage_node_ip, storage_node_port)
+
+    elif words[0] == 'dir_delete':
+        out = delete_dir(storage_node_ip, storage_node_port)
 
     else:
         out = 'unknown command'
