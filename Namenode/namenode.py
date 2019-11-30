@@ -26,6 +26,8 @@ except (Exception, psycopg2.Error) as error:
 
 buffer_size = 1024
 number_of_users = 1
+storage_extra_ip = '127.0.0.1'
+storage_extra_port = 8100
 
 
 def login_user(log_in, password):
@@ -51,7 +53,7 @@ def login_user(log_in, password):
 def send_file(storage_node_ip, storage_node_port):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'receive'
+    message = 'receive:' + storage_extra_ip + ':' + str(storage_extra_port)
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
@@ -163,7 +165,6 @@ def command_handler(message, conn):
         filename = words[1]
         size = words[2]
         current_directory.add_file(name=filename, size=size, storage=[storage_node_ip])
-        print(current_directory.get_files())
         # opening of port on storage node
         _, storagenode_port = send_file(storage_node_ip, storage_node_port)
         out = storage_node_ip + ':' + storagenode_port
