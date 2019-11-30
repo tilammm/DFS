@@ -8,7 +8,6 @@ import shutil
 
 files = []
 clients = []
-print_lock = threading.Lock()
 root_directory = 'files/'
 
 
@@ -44,7 +43,8 @@ class ClientListener(Thread):
 
     def run(self):
         filename = self.sock.recv(128).decode()
-        filename = root_directory + filename
+
+        # correct name
         i = 1
         if os.path.isfile(filename):
             while True:
@@ -54,10 +54,12 @@ class ClientListener(Thread):
                 else:
                     filename = filename[:index] + '(Copy_' + str(i) + ')' + filename[index:]
                     break
+
+        # file receiving
         with open(filename, 'wb') as f:
             message = f'{filename} created'
             print(message)
-            self.sock.send('1'.encode())
+            self.sock.send(message.encode())
             while True:
                 # try to read 1024 bytes from user
                 # this is blocking call, thread will be paused here
@@ -103,7 +105,6 @@ class ClientReader(Thread):
 
     def run(self):
         filename = self.sock.recv(128).decode()
-        filename = root_directory + filename
         f = open(filename, 'rb')
         print(f)
         file_size = f.tell()
@@ -175,16 +176,43 @@ def init(conn):
     return 'Initialized'
 
 
-def command_handler(message, connection):
-    print(message)
-    if message == 'receive':
+def mkdir(dir_name, conn):
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    conn.send('created'.encode())
+    return 'Created'
+
+
+def filerm(file_name, conn):
+    if os.path.exists(file_name):
+        os.remove(file_name)
+    conn.send('removed'.encode())
+    return 'Removed'
+
+
+def delete_dir(dir_path, conn):
+    if os.path.exists(dir_path):
+        shutil.rmtree(dir_path)
+    conn.send('removed'.encode())
+    return 'Removed'
+
+
+def command_handler(messages, connection):
+    print(messages)
+    if messages[0] == 'receive':
         receive(connection)
         return 'received'
-    elif message == 'reading':
+    elif messages[0] == 'reading':
         reading(connection)
         return 'reading'
-    elif message == 'init':
+    elif messages[0] == 'init':
         return init(connection)
+    elif messages[0] == 'mkdir':
+        return mkdir(messages[1], connection)
+    elif messages[0] == 'filerm':
+        return filerm(messages[1], connection)
+    elif messages[0] == 'del_dir':
+        return delete_dir(messages[1], connection)
     else:
         return 'error'
 
@@ -195,13 +223,11 @@ def threaded(connection, address):
         data = connection.recv(1024)
         if not data:
             print(f'Connection with {address[0]} closed')
-            # lock released on exit
-            print_lock.release()
             break
-
-        data = command_handler(data.decode(), connection)
+        commands = data.decode().split(':')
+        data = command_handler(commands, connection)
         print(data)
-        # connection closed
+    # connection closed
     connection.close()
 
 
