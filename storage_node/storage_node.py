@@ -99,7 +99,6 @@ class ClientListener(Thread):
                 else:
                     filename = filename[:index] + '(Copy_' + str(i) + ')' + filename[index:]
                     break
-        print(filename)
         # file receiving
         with open(filename, 'wb') as f:
             message = f'{filename} created'
@@ -263,6 +262,12 @@ def delete_dir(dir_path, conn):
     return 'Removed'
 
 
+def copy(src, dst, conn):
+    shutil.copyfile(src, dst)
+    conn.send('copied'.encode())
+    return 'Copied'
+
+
 def command_handler(messages, connection):
     print(messages)
 
@@ -286,6 +291,8 @@ def command_handler(messages, connection):
         return filerm(messages[1], connection)
     elif messages[0] == 'del_dir':
         return delete_dir(messages[1], connection)
+    elif messages[0] == 'copy':
+        return copy(messages[1], messages[2], connection)
     else:
         return 'error'
 
