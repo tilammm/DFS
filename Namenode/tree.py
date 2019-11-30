@@ -13,19 +13,46 @@ class Tree:
         self.number_of_file = 0
 
     def delete_dir(self):
+        if self.parent is None:
+            return 'error'
         for file in self.files:
             del file
         for child in self.dirs:
-            child.delete_self()
+            child.delete_dir()
+        parent = self.parent
+        parent.dirs.remove(self)
         del self
+        return parent
 
-    def add_dir(self, name, path):
+    def add_dir(self, name, path=None):
+        for dir in self.dirs:
+            if dir.name == name:
+                return 'Directory exists'
+        path = self.path + name + '/'
         new_dir = Tree(name, path, parent=self)
         self.dirs.append(new_dir)
-        return new_dir
+        return 'ok'
 
-    def add_file(self, name, path, size, storage):
-        new_file = File(name, path, size, storage, self)
+    def add_file(self, name, size, storage):
+        # correct name
+        candidate = name
+        duplicate = False
+        for file in self.files:
+            if name == file.name:
+                duplicate = True
+        i = 1
+        while duplicate:
+            duplicate = False
+            index = name.rindex('.')
+            candidate = name[:index] + '(Copy_' + str(i) + ')' + name[index:]
+            for file in self.files:
+                if candidate == file.name:
+                    duplicate = True
+        i += 1
+
+        # new file to list
+        path = self.path + candidate
+        new_file = File(candidate, path, size, storage, self)
         self.files.append(new_file)
         return new_file
     
@@ -47,23 +74,38 @@ class Tree:
                     continue
         return current
 
-
     def delete_file(self, name):
-        deleted = 0
-        for i in self.files:
-            if i.name == name:
-                self.files.remove(i)
-                deleted = 1
+        result = 'can not delete file'
+        for file in self.files:
+            if file.name == name:
+                self.files.remove(file)
+                result = 'ok'
+                del file
                 break
-        if deleted == 1:
-            print("File was deleted")
-        else:
-            print('File to be deleted does not exist:', name)
+        return result
+
+    def get_files(self):
+        result = []
+        for file in self.files:
+            result.append(file.name)
+        return result
+
+    def get_dirs(self):
+        result = []
+        for dir in self.dirs:
+            result.append(dir.name)
+        return result
+
+    def open(self, name):
+        for dir in self.dirs:
+            if dir.name == name:
+                return dir
+        return None
 
 
 class File:
 
-    def __init__(self, name, path, size, storages, parent=None):
+    def __init__(self, name, path, size=0, storages=[], parent=None):
         self.parent = parent
         self.name = name
         self.path = path
@@ -76,14 +118,3 @@ class File:
                str(self.path) + '\n' + 'Modified: ' + str(self.last_mod)
         return info
 
-storages = []
-
-root = Tree('root', '/')
-root.add_dir('n1', '/n1')
-root.add_dir('n2', '/n2')
-node_2 = root.get_path_entity('/n2')
-node_1 = root.get_path_entity('/n1')
-node_2.add_file('first', '/first.txt', 70614, 'n2')
-print(node_1.files)
-#root.replicate('first')
-#print(root.files[0].info())
