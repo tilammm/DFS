@@ -4,24 +4,29 @@ import threading
 import psycopg2
 from Namenode.tree import Tree
 
-try:
-    connection = psycopg2.connect(user="test",
-                                  password="123456",
-                                  host="127.0.0.1",
-                                  port="5432",
-                                  database="DFS")
+# try:
+#     connection = psycopg2.connect(user="test",
+#                                   password="123456",
+#                                   host="127.0.0.1",
+#                                   port="5432",
+#                                   database="DFS")
+#
+#     cursor = connection.cursor()
+#     # Print PostgreSQL Connection properties
+#     print(connection.get_dsn_parameters(), "\n")
+#
+#     # Print PostgreSQL version
+#     cursor.execute("SELECT version();")
+#     record = cursor.fetchone()
+#
+# except (Exception, psycopg2.Error) as error:
+#     print("Error while connecting to PostgreSQL", error)
 
-    cursor = connection.cursor()
-    # Print PostgreSQL Connection properties
-    print(connection.get_dsn_parameters(), "\n")
 
-    # Print PostgreSQL version
-    cursor.execute("SELECT version();")
-    record = cursor.fetchone()
-
-except (Exception, psycopg2.Error) as error:
-    print("Error while connecting to PostgreSQL", error)
-
+storage_node_ip = '127.0.0.1'
+storage_node_ip_extra = '127.0.0.1'
+storage_node_port = 8000
+storage_node_port_extra = 8000
 
 ip = '127.0.0.1'
 port = 5005
@@ -31,21 +36,23 @@ number_of_users = 1
 
 
 def login_user(log_in, password):
-    query = 'select * from client where username = %s'
-    print(log_in)
-    cursor.execute(query, (log_in, ))
-    users = cursor.fetchall()
-    if len(users) == 0:
-        return 0
-    else:
-        return users[0][0]
+    # query = 'select * from client where username = %s'
+    # print(log_in)
+    # cursor.execute(query, (log_in, ))
+    # users = cursor.fetchall()
+    # if len(users) == 0:
+    #     return 0
+    # else:
+    #     return users[0][0]
+    return 1
 
 
 def send_file(storage_node_ip, storage_node_port):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'receive'
-    tcp_socket.send(message.encode())
+    message = 'receive:' + str(storage_node_ip_extra + ':' + str(storage_node_port_extra))
+    tcp_socket.sendall(message.encode())
+
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
     if status != 'error':
@@ -80,15 +87,13 @@ def send_init(storage_node_ip, storage_node_port):
 def command_handler(message):
     print(message)
     words = message.split(':')
-    storage_node_ip = '127.0.0.1'
-    storage_node_port = 8000
     global file_tree
     global current_directory
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
     elif words[0] == 'write':
-        storagenode_ip, storagenode_port = send_file(storage_node_ip, storage_node_port)
-        out = storagenode_ip + ':' + storagenode_port
+        _, storagenode_port = send_file(storage_node_ip, storage_node_port)
+        out = storage_node_ip + ':' + storagenode_port
     elif words[0] == 'read':
         storagenode_ip, storagenode_port = read_file(storage_node_ip, storage_node_port)
         out = storagenode_ip + ':' + storagenode_port
