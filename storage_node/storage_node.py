@@ -100,7 +100,7 @@ class ClientListener(Thread):
                 else:
                     filename = filename[:index] + '(Copy_' + str(i) + ')' + filename[index:]
                     break
-
+        print(filename)
         # file receiving
         with open(filename, 'wb') as f:
             message = f'{filename} created'
@@ -303,7 +303,8 @@ def threaded(connection, address):
 
 if __name__ == '__main__':
     print('Server is ready for commands')
-    os.makedirs('files')
+    if not os.path.exists('files'):
+        os.makedirs('files')
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', 8000))
