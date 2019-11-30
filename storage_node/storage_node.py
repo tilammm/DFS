@@ -89,6 +89,11 @@ class ClientListener(Thread):
     def run(self):
 
         filename = self.file
+        filename = './' + filename
+        splitepath = filename.split('/')
+        if (len(splitepath) > 2):
+            all_file_path = filename[:-(len(splitepath[len(splitepath) - 1]))]
+            os.makedirs(all_file_path, exist_ok=True)
         # correct name
         i = 1
         if os.path.isfile(filename):
