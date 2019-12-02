@@ -5,6 +5,8 @@ from threading import Thread
 from _thread import *
 import os
 import shutil
+import time
+
 
 files = []
 clients = []
@@ -27,31 +29,15 @@ def send(filename, ip, port):
 
     old_file_position = f.tell()
     f.seek(0, os.SEEK_END)
-    file_size = f.tell()
-    if file_size == 0:
-        file_size = 1
     f.seek(old_file_position, os.SEEK_SET)
 
-    bytes_transported = 128
-
-    percent = 0
-
-    byte = f.read(128)
+    byte = f.read(1024)
 
     while byte:
-
-        if bytes_transported * 100 // file_size > percent:
-            percent = bytes_transported * 100 // file_size
-            if percent > 100:
-                percent = 100
-            sys.stdout.flush()
-            sys.stdout.write(f'\r{percent}%')
-
-        bytes_transported += 128
         sock.send(byte)
-        byte = f.read(128)
+        byte = f.read(1024)
     print()
-    sock.close()
+    sock.shutdown(socket.SHUT_WR)
     f.close()
 
 
@@ -112,12 +98,7 @@ class ClientListener(Thread):
             while True:
                 # try to read 1024 bytes from user
                 # this is blocking call, thread will be paused here
-                try:
-                    data = self.sock.recv(128)
-                except:
-                    self._close()
-                    # finish the thread
-                    return
+                data = self.sock.recv(1024)
                 if data:
                     f.write(data)
                 else:
@@ -155,11 +136,12 @@ class ClientReader(Thread):
     # clean up
     def _close(self):
         clients.remove(self.sock)
+        self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
         print(self.name + ' disconnected')
 
     def run(self):
-        filename = self.sock.recv(128).decode()
+        filename = self.sock.recv(1024).decode()
         f = open(filename, 'rb')
         print(f)
         file_size = f.tell()
@@ -171,11 +153,11 @@ class ClientReader(Thread):
         print('Response was received')
 
         with open(filename, 'rb') as f:
-            byte = f.read(128)
+            byte = f.read(1024)
 
             while byte:
                 self.sock.send(byte)
-                byte = f.read(128)
+                byte = f.read(1024)
         f.close()
         self._close()
         return
@@ -188,6 +170,7 @@ def send_file(storage_node_ip, storage_node_port):
     tcp_socket.sendall(message.encode())
 
     status = tcp_socket.recv(1024).decode()
+    print(status)
     tcp_socket.close()
     if status != 'error':
         return storage_node_ip, status
@@ -200,7 +183,7 @@ def receive(connection):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', 0))
     sock.listen()
-    connection.send(str(sock.getsockname()[1]).encode())
+    connection.sendall(str(sock.getsockname()[1]).encode())
 
     print('Server is ready for users')
 
@@ -212,8 +195,11 @@ def receive(connection):
     next_name += 1
     print(str(addr) + ' connected as ' + name)
     print(name, con)
-    filename = con.recv(128).decode()
-    ClientListener(name=name, sock=con, file=filename).start()
+    filename = con.recv(1024).decode()
+    listener = ClientListener(name=name, sock=con, file=filename)
+    listener.start()
+    while listener.is_alive():
+        continue
     print(filename, 'filename')
     return filename
 
@@ -267,10 +253,54 @@ def delete_dir(dir_path, conn):
     return 'Removed'
 
 
-def copy(src, dst, conn):
+def copy(words, conn):
+    src = words[1]
+    dst = words[2]
+
+    filename = './' + dst
+    splitepath = filename.split('/')
+
+    if (len(splitepath) > 2):
+        all_file_path = filename[:-(len(splitepath[len(splitepath) - 1]))]
+        os.makedirs(all_file_path, exist_ok=True)
+
+    if len(words) > 3:
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(words)
+        tcp_socket.connect((words[3], int(words[4])))
+        message = words[0] + ':' + words[1] + ':' + words[2]
+        tcp_socket.sendall(message.encode())
+
+        status = tcp_socket.recv(1024).decode()
+        tcp_socket.close()
     shutil.copyfile(src, dst)
     conn.send('copied'.encode())
     return 'Copied'
+
+
+def move(words, conn):
+    src = words[1]
+    dst = words[2]
+
+    filename = './' + dst
+    splitepath = filename.split('/')
+
+    if (len(splitepath) > 2):
+        all_file_path = filename[:-(len(splitepath[len(splitepath) - 1]))]
+        os.makedirs(all_file_path, exist_ok=True)
+
+    if len(words) > 3:
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(words)
+        tcp_socket.connect((words[3], int(words[4])))
+        message = words[0] + ':' + words[1] + ':' + words[2]
+        tcp_socket.sendall(message.encode())
+
+        status = tcp_socket.recv(1024).decode()
+        tcp_socket.close()
+    shutil.move(src, dst)
+    conn.send('moved'.encode())
+    return 'Moved'
 
 
 def command_handler(messages, connection):
@@ -297,7 +327,9 @@ def command_handler(messages, connection):
     elif messages[0] == 'del_dir':
         return delete_dir(messages[1], connection)
     elif messages[0] == 'copy':
-        return copy(messages[1], messages[2], connection)
+        return copy(messages, connection)
+    elif messages[0] == 'move':
+        return move(messages, connection)
     else:
         return 'error'
 

@@ -6,7 +6,7 @@ import readline
 
 namenode_ip = '127.0.0.1'
 namenode_port = 5005
-buffer_size = 128
+buffer_size = 1024
 
 
 # get filename from filepath
@@ -25,7 +25,7 @@ def send(tcp_sock, filename):
 
     # sending data  to namenode
     name = get_name(filename)
-    message = 'write:' + name + ':' + str(buffer_size)
+    message = 'write:' + name + ':' + str(file_size)
 
     tcp_sock.send(message.encode())
     data = tcp_sock.recv(buffer_size).decode()
@@ -39,23 +39,32 @@ def send(tcp_sock, filename):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.connect((ip, int(port)))
 
+    second_ip = storage_node[2]
+    second_port = storage_node[3]
+
+    second_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    second_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    second_sock.connect((second_ip, int(second_port)))
+
     global current_dir
     name = current_dir + '/' + name
     sock.sendall(name.encode())
+    second_sock.sendall(name.encode())
 
-    response = sock.recv(128)
+    response = sock.recv(1024)
     print(response.decode())
+    second_response = second_sock.recv(1024)
 
     old_file_position = f.tell()
     f.seek(0, os.SEEK_END)
     f.seek(old_file_position, os.SEEK_SET)
 
-    bytes_transported = 128
+    bytes_transported = 1024
 
     percent = 0
-
+    print(f'{file_size} file_size')
     # transfering of data to storagenode
-    byte = f.read(128)
+    byte = f.read(1024)
 
     while byte:
 
@@ -66,12 +75,14 @@ def send(tcp_sock, filename):
             sys.stdout.flush()
             sys.stdout.write(f'\r{percent}%')
 
-        bytes_transported += 128
+        bytes_transported += 1024
         sock.send(byte)
-        byte = f.read(128)
+        second_sock.send(byte)
+        byte = f.read(1024)
     print()
 
     sock.close()
+    second_sock.close()
     f.close()
 
 
@@ -101,7 +112,7 @@ def read(filename, ip, port):
 
     with open(filename, 'wb') as f:
         sock.send('1'.encode())
-        bytes_transported = 128
+        bytes_transported = 1024
         percent = 0
 
         while True:
@@ -113,12 +124,12 @@ def read(filename, ip, port):
                 sys.stdout.flush()
                 sys.stdout.write(f'\r{percent}%')
 
-            data = sock.recv(128)
+            data = sock.recv(1024)
             if data:
                 f.write(data)
             else:
                 break
-            bytes_transported += 128
+            bytes_transported += 1024
         print()
         sock.close()
         f.close()
@@ -181,8 +192,13 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
 
-    elif commands[0] == 'filerm':
-        message = commands[0] + ':' + commands[1]
+    elif commands[0] == 'move':
+        message = commands[0] + ':' + commands[1] + ':' + commands[2]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+
+    elif commands[0] == 'file_delete':
+        message = 'filerm:' + commands[1]
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
         if data == 'error':

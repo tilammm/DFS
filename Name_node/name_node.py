@@ -53,7 +53,7 @@ def login_user(log_in, password):
 def send_file(storage_node_ip, storage_node_port):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'receive:' + storage_extra_ip + ':' + str(storage_extra_port)
+    message = 'receive'
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
@@ -137,18 +137,55 @@ def copy(file_name, dir_name, storage_node_ip, storage_node_port):
         return 'error'
 
     new_file = current_directory.get_file(file_name)
+
+    if new_file is None:
+        return 'error'
+
+    copied = candidate.add_file(name=new_file.name, size=new_file.size, storage=storage_node_ip)
+
+    # send command to storage node
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((storage_node_ip, storage_node_port))
+    global storage_extra_ip, storage_extra_port
+    message = 'copy:' + current_directory.path + file_name + ':' + copied.path \
+              + ':' + storage_extra_ip + ':' + str(storage_extra_port)
+    tcp_socket.send(message.encode())
+    response = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+    if response == 'copied':
+        return 'File copied: ' + copied.name
+    else:
+        return 'error'
+
+
+def move(file_name, dir_name, storage_node_ip, storage_node_port):
+    # add dir to tree
+    global current_directory
+    global file_tree
+    candidate = file_tree.get_path_entity(dir_name)
+
+    if candidate is None:
+        return 'error'
+
+    new_file = current_directory.get_file(file_name)
+
+    if new_file is None:
+        return 'error'
+
     current_directory.delete_file(new_file.name)
     copied = candidate.add_file(name=new_file.name, size=new_file.size, storage=storage_node_ip)
 
     # send command to storage node
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'copy:' + current_directory.path + file_name + ':' + copied.path
+    global storage_extra_ip, storage_extra_port
+    message = 'move:' + current_directory.path + file_name + ':' + copied.path \
+              + ':' + storage_extra_ip + ':' + str(storage_extra_port)
     tcp_socket.send(message.encode())
     response = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
-    if response == 'copied':
-        return 'File copied: ' + copied.name
+    if response == 'moved':
+        return 'File moved: ' + copied.name
     else:
         return 'error'
 
@@ -193,7 +230,8 @@ def command_handler(message, conn):
         current_directory.add_file(name=filename, size=size, storage=[storage_node_ip, storage_extra_ip])
         # opening of port on storage node
         _, storagenode_port = send_file(storage_node_ip, storage_node_port)
-        out = storage_node_ip + ':' + storagenode_port
+        _, storagenodeextra_port = send_file(storage_extra_ip, storage_extra_port)
+        out = storage_node_ip + ':' + storagenode_port + ':' + storage_extra_ip + ':' + storagenodeextra_port
 
     elif words[0] == 'read':
         storagenode_ip, storagenode_port = read_file(storage_node_ip, storage_node_port)
@@ -204,6 +242,9 @@ def command_handler(message, conn):
 
     elif words[0] == 'copy':
         out = copy(words[1], words[2], storage_node_ip, storage_node_port)
+
+    elif words[0] == 'move':
+        out = move(words[1], words[2], storage_node_ip, storage_node_port)
 
     elif words[0] == 'filerm':
         out = filerm(words[1], storage_node_ip, storage_node_port)
