@@ -25,7 +25,7 @@ def send(tcp_sock, filename):
 
     # sending data  to namenode
     name = get_name(filename)
-    message = 'write:' + name + ':' + str(buffer_size)
+    message = 'write:' + name + ':' + str(file_size)
 
     tcp_sock.send(message.encode())
     data = tcp_sock.recv(buffer_size).decode()
@@ -50,12 +50,12 @@ def send(tcp_sock, filename):
     f.seek(0, os.SEEK_END)
     f.seek(old_file_position, os.SEEK_SET)
 
-    bytes_transported = 128
+    bytes_transported = 1024
 
     percent = 0
-
+    print(f'{file_size} file_size')
     # transfering of data to storagenode
-    byte = f.read(128)
+    byte = f.read(1024)
 
     while byte:
 
@@ -66,9 +66,9 @@ def send(tcp_sock, filename):
             sys.stdout.flush()
             sys.stdout.write(f'\r{percent}%')
 
-        bytes_transported += 128
+        bytes_transported += 1024
         sock.send(byte)
-        byte = f.read(128)
+        byte = f.read(1024)
     print()
 
     sock.close()
@@ -186,8 +186,8 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
 
-    elif commands[0] == 'filerm':
-        message = commands[0] + ':' + commands[1]
+    elif commands[0] == 'file_delete':
+        message = 'filerm:' + commands[1]
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
         if data == 'error':

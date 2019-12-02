@@ -137,6 +137,10 @@ def copy(file_name, dir_name, storage_node_ip, storage_node_port):
         return 'error'
 
     new_file = current_directory.get_file(file_name)
+
+    if new_file is None:
+        return 'error'
+
     copied = candidate.add_file(name=new_file.name, size=new_file.size, storage=storage_node_ip)
 
     # send command to storage node
@@ -164,6 +168,10 @@ def move(file_name, dir_name, storage_node_ip, storage_node_port):
         return 'error'
 
     new_file = current_directory.get_file(file_name)
+
+    if new_file is None:
+        return 'error'
+
     current_directory.delete_file(new_file.name)
     copied = candidate.add_file(name=new_file.name, size=new_file.size, storage=storage_node_ip)
 
