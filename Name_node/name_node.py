@@ -1,8 +1,26 @@
+import operator
+import os
 import socket
 from _thread import *
 import threading
 import psycopg2
 from Name_node.tree import Tree
+
+
+storage_list = [('1', 0, True), ('2', 0, True), ('3', 0, True)]
+
+
+def ping_storage(storage_ip):
+
+    hostname = storage_ip
+    response = os.system("ping -c 1 " + hostname)
+
+    # and then check the response...
+    if response == 0:
+        return True
+    else:
+        return False
+
 
 try:
     connection = psycopg2.connect(user="test",
@@ -23,11 +41,25 @@ except (Exception, psycopg2.Error) as error:
     print("Error while connecting to PostgreSQL", error)
 
 
+def giveIPs():
+    global storage_list
+    for i in range(len(storage_list)):
+        storage_list[i][2] = ping_storage(storage_list[i][0])
+
+    storage_list = storage_list.sort(key=operator.itemgetter(1))
+    count = 0
+    ips = []
+    for i in range(len(storage_list)):
+        if storage_list[i][2] and count < 2:
+            ips.append(storage_list[i])
+            count += 1
+    return ips[0], ips[1]
+
 
 buffer_size = 1024
 number_of_users = 1
-storage_extra_ip = '127.0.0.1'
-storage_extra_port = 8100
+
+
 
 
 def login_user(log_in, password):
@@ -63,9 +95,18 @@ def send_file(storage_node_ip, storage_node_port):
         return storage_node_ip
 
 
-def read_file(storage_node_ip, storage_node_port):
+def read_file(filename):
+    global current_directory
+    file = current_directory.get_file(filename)
+    if file is None:
+        return 'error'
+    ips = file.storages
+    if ping_storage(ips[0]):
+        storage_node_ip = ips[0]
+    else:
+        storage_node_ip = ips[1]
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
+    tcp_socket.connect((storage_node_ip, 8000))
     message = 'reading'
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
@@ -76,58 +117,62 @@ def read_file(storage_node_ip, storage_node_port):
         return storage_node_ip
 
 
-def send_init(storage_node_ip, storage_node_port):
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'init'
-    tcp_socket.send(message.encode())
-    status = tcp_socket.recv(buffer_size).decode()
-    tcp_socket.close()
-    return status
+def send_init():
+    global storage_list
+    for i in storage_list:
+        if ping_storage(i[0]):
+            tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp_socket.connect((i[0], 8000))
+            message = 'init'
+            tcp_socket.send(message.encode())
+            status = tcp_socket.recv(buffer_size).decode()
+            tcp_socket.close()
+    return 'Initialized'
 
 
-def mkdir(dir_name, storage_node_ip, storage_node_port):
+def mkdir(dir_name):
     # add dir to tree
     global current_directory
     status = current_directory.add_dir(name=dir_name)
-    if status != 'ok':
-        return status
-
-    # send command to storage node
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'mkdir:' + current_directory.path + dir_name
-    tcp_socket.send(message.encode())
-    response = tcp_socket.recv(buffer_size).decode()
-    tcp_socket.close()
-    if response == 'created':
-        return 'Directory created: ' + dir_name
-    else:
-        return 'error'
+    return status
 
 
-def filerm(file_name, storage_node_ip, storage_node_port):
+def filerm(file_name):
     # delete file from tree
     global current_directory
+    current_file = current_directory.get_file(file_name)
+    if(current_file is None):
+        return 'error'
+    ips = current_file.storages.copy()
     status = current_directory.delete_file(file_name)
 
     if status != 'ok':
         return status
-
+    response1 = 'removed'
+    response2 = 'removed'
     # send command to storage node
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'filerm:' + current_directory.path + file_name
-    tcp_socket.send(message.encode())
-    response = tcp_socket.recv(buffer_size).decode()
-    tcp_socket.close()
-    if response == 'removed':
+    if ping_storage(ips[0]):
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_socket.connect((ips[0], 8000))
+        message = 'filerm:' + current_directory.path + file_name
+        tcp_socket.send(message.encode())
+        response1 = tcp_socket.recv(buffer_size).decode()
+        tcp_socket.close()
+
+    if ping_storage(ips[1]):
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_socket.connect((ips[1], 8000))
+        message = 'filerm:' + current_directory.path + file_name
+        tcp_socket.send(message.encode())
+        response2 = tcp_socket.recv(buffer_size).decode()
+        tcp_socket.close()
+    if response1 == 'removed' and response2 == 'removed':
         return 'File deleted: ' + file_name
     else:
         return 'error'
 
 
-def copy(file_name, dir_name, storage_node_ip, storage_node_port):
+def copy(file_name, dir_name):
     # add dir to tree
     global current_directory
     global file_tree
@@ -136,23 +181,33 @@ def copy(file_name, dir_name, storage_node_ip, storage_node_port):
     if candidate is None:
         return 'error'
 
-    new_file = current_directory.get_file(file_name)
+    current_file = current_directory.get_file(file_name)
 
-    if new_file is None:
+    if current_file is None:
         return 'error'
 
-    copied = candidate.add_file(name=new_file.name, size=new_file.size, storage=storage_node_ip)
+    ping_storage(current_file.storages[0])
+    ping_storage(current_file.storages[1])
+
+    copied = candidate.add_file(name=current_file.name, size=current_file.size, storage=current_file.storages)
+
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((current_file.storages[0], 8000))
+    message = 'copy:' + current_directory.path + file_name + ':' + copied.path
+    tcp_socket.send(message.encode())
+    response1 = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((current_file.storages[1], 8000))
+    message = 'copy:' + current_directory.path + file_name + ':' + copied.path
+    tcp_socket.send(message.encode())
+    response2 = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
 
     # send command to storage node
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
-    global storage_extra_ip, storage_extra_port
-    message = 'copy:' + current_directory.path + file_name + ':' + copied.path \
-              + ':' + storage_extra_ip + ':' + str(storage_extra_port)
-    tcp_socket.send(message.encode())
-    response = tcp_socket.recv(buffer_size).decode()
-    tcp_socket.close()
-    if response == 'copied':
+
+    if response1 == 'copied' and response2 == 'copied':
         return 'File copied: ' + copied.name
     else:
         return 'error'
@@ -167,59 +222,70 @@ def move(file_name, dir_name, storage_node_ip, storage_node_port):
     if candidate is None:
         return 'error'
 
-    new_file = current_directory.get_file(file_name)
+    current_file = current_directory.get_file(file_name)
 
-    if new_file is None:
+    if current_file is None:
         return 'error'
 
-    current_directory.delete_file(new_file.name)
-    copied = candidate.add_file(name=new_file.name, size=new_file.size, storage=storage_node_ip)
+    current_directory.delete_file(current_file.name)
+    ping_storage(current_file.storages[0])
+    ping_storage(current_file.storages[1])
+
+    copied = candidate.add_file(name=current_file.name, size=current_file.size, storage=current_file.storages)
+
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((current_file.storages[0], 8000))
+    message = 'move:' + current_directory.path + file_name + ':' + copied.path
+    tcp_socket.send(message.encode())
+    response1 = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
+
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((current_file.storages[1], 8000))
+    message = 'move:' + current_directory.path + file_name + ':' + copied.path
+    tcp_socket.send(message.encode())
+    response2 = tcp_socket.recv(buffer_size).decode()
+    tcp_socket.close()
 
     # send command to storage node
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
-    global storage_extra_ip, storage_extra_port
-    message = 'move:' + current_directory.path + file_name + ':' + copied.path \
-              + ':' + storage_extra_ip + ':' + str(storage_extra_port)
-    tcp_socket.send(message.encode())
-    response = tcp_socket.recv(buffer_size).decode()
-    tcp_socket.close()
-    if response == 'moved':
+
+    if response1 == 'moved' and response2 == 'moved':
         return 'File moved: ' + copied.name
     else:
         return 'error'
 
 
-def delete_dir(storage_node_ip, storage_node_port):
+def delete_dir():
     # delete file from tree
     global current_directory
+    global storage_list
 
     if current_directory.parent is None:
         return 'error'
 
+    for storage in storage_list:
+        if(ping_storage(storage[0])):
+            tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcp_socket.connect((storage[0], 8000))
+            message = 'del_dir:' + current_directory.path
+            tcp_socket.send(message.encode())
+            response = tcp_socket.recv(buffer_size).decode()
+            tcp_socket.close()
+
     # send command to storage node
-    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'del_dir:' + current_directory.path
-    tcp_socket.send(message.encode())
-    response = tcp_socket.recv(buffer_size).decode()
-    tcp_socket.close()
-    if response == 'removed':
-        current_directory = current_directory.delete_dir()
-        return current_directory.path
-    else:
-        return 'error'
+
+    current_directory = current_directory.delete_dir()
+    return current_directory.path
 
 
 def command_handler(message, conn):
     print(message)
     words = message.split(':')
-    storage_node_ip = '127.0.0.1'
     storage_node_port = 8000
-
     global file_tree
     global current_directory
 
+    first_storage, second_storage = giveIPs()
     if words[0] == 'login':
         out = str(login_user(words[1], words[2]))
 
@@ -227,27 +293,32 @@ def command_handler(message, conn):
         # add file to tree
         filename = words[1]
         size = words[2]
-        current_directory.add_file(name=filename, size=size, storage=[storage_node_ip, storage_extra_ip])
+        first_storage[1] += size
+        second_storage[1] += size
+
+        current_directory.add_file(name=filename, size=size, storage=[first_storage[0], second_storage[0]])
         # opening of port on storage node
-        _, storagenode_port = send_file(storage_node_ip, storage_node_port)
-        _, storagenodeextra_port = send_file(storage_extra_ip, storage_extra_port)
-        out = storage_node_ip + ':' + storagenode_port + ':' + storage_extra_ip + ':' + storagenodeextra_port
+        _, first_port = send_file(first_storage[0], 8000)
+        _, second_port = send_file(second_storage[0], 8000)
+        out = first_storage[0] + ':' + first_port + ':' + second_storage[0] + ':' + second_port
 
     elif words[0] == 'read':
-        storagenode_ip, storagenode_port = read_file(storage_node_ip, storage_node_port)
+        storagenode_ip, storagenode_port = read_file(words[1])
+        if (storagenode_port == 'error'):
+            return 'error'
         out = storagenode_ip + ':' + storagenode_port
 
     elif words[0] == 'mkdir':
-        out = mkdir(words[1], storage_node_ip, storage_node_port)
+        out = mkdir(words[1])
 
     elif words[0] == 'copy':
-        out = copy(words[1], words[2], storage_node_ip, storage_node_port)
+        out = copy(words[1], words[2])
 
     elif words[0] == 'move':
-        out = move(words[1], words[2], storage_node_ip, storage_node_port)
+        out = move(words[1], words[2])
 
     elif words[0] == 'filerm':
-        out = filerm(words[1], storage_node_ip, storage_node_port)
+        out = filerm(words[1])
 
     elif words[0] == 'open':
         out = 'error'
@@ -283,10 +354,10 @@ def command_handler(message, conn):
         file_tree.delete_dir()
         file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
         current_directory = file_tree
-        out = send_init(storage_node_ip, storage_node_port)
+        out = send_init()
 
     elif words[0] == 'dir_delete':
-        out = delete_dir(storage_node_ip, storage_node_port)
+        out = delete_dir()
 
     else:
         out = 'unknown command'

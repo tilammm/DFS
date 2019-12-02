@@ -175,9 +175,11 @@ def send_command(commands):
         data = 'The file has been sent'
 
     elif commands[0] == 'read':
-        message = commands[0]
+        message = commands[0] + ':' + commands[1]
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
+        if data == 'error':
+            return 'error'
         storage_node = data.split(':')
         read(commands[1], storage_node[0], str(storage_node[1]))
         data = 'The file has been read'
