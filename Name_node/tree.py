@@ -1,6 +1,17 @@
 import datetime
 
 
+def swap_ip(file, ip, ips_of_storages):
+    for storage in file.storages:
+        if storage != ip:
+            result_storage = storage
+    for node in ips_of_storages:
+        if node != result_storage and node != ip:
+            new_ip = node
+
+    file.storages = [result_storage, new_ip]
+    return file, result_storage
+
 class Tree:
 
     def __init__(self, name, path, dirs=None, files=None, parent=None):
@@ -56,11 +67,6 @@ class Tree:
         self.files.append(new_file)
         return new_file
     
-    def replicate(self, name):
-        for i in self.files:
-            if i.name == name:
-                print('Found ' + i.name)
-    
     def get_path_entity(self, path):
         path_array = path.split("/")
         current = self
@@ -107,6 +113,34 @@ class Tree:
             if dir.name == name:
                 return dir
         return None
+
+    def replicate(self, ip, storage_nodes):
+        list_of_ip = []
+        for node in storage_nodes:
+            list_of_ip.append(node[0])
+        result = []
+        for index in range(len(self.files)):
+            if ip in self.files[index].storages:
+                self.files[index], result_ip = swap_ip(self.files[index], ip, list_of_ip)
+                result.append((self.files[index].path, result_ip))
+        for index in range(len(self.dirs)):
+            result.append(self.dirs[index].replicate(ip, storage_nodes))
+        return result
+
+    def size_of_dir(self, storage_nodes):
+        list_of_ip = []
+        for node in storage_nodes:
+            list_of_ip.append(node[0])
+        result = [0, 0, 0]
+        for file in self.files:
+            for i, node in enumerate(list_of_ip):
+                if node in file.storages:
+                    result[i] += int(file.size)
+        for child in self.dirs:
+            subresult = child.size_of_dir()
+            for i in range(3):
+                result[i] += subresult[i]
+        return result
 
 
 class File:
