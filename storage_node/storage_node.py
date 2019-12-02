@@ -303,6 +303,10 @@ def move(words, conn):
     return 'Moved'
 
 
+def create_file(filename):
+    open(filename, 'a').close()
+
+
 def command_handler(messages, connection):
     print(messages)
 
@@ -330,6 +334,8 @@ def command_handler(messages, connection):
         return copy(messages, connection)
     elif messages[0] == 'move':
         return move(messages, connection)
+    elif messages[0] == 'create_file':
+        return create_file(messages[1])
     else:
         return 'error'
 
