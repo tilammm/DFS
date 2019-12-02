@@ -144,7 +144,7 @@ class ClientReader(Thread):
         filename = self.sock.recv(1024).decode()
         f = open(filename, 'rb')
         print(f)
-        file_size = f.tell()
+        file_size = os.path.getsize(filename)
         print(file_size)
         self.sock.send(str(file_size).encode())
 
