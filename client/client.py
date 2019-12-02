@@ -19,7 +19,7 @@ def get_name(filepath):
 def send(tcp_sock, filename):
     f = open(filename, "rb")
 
-    file_size = f.tell()
+    file_size = os.path.getsize(filename)
     if file_size == 0:
         file_size = 1
 
