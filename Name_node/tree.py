@@ -127,12 +127,19 @@ class Tree:
             result.append(self.dirs[index].replicate(ip, storage_nodes))
         return result
 
-    def size_of_dir(self):
-        result = 0
+    def size_of_dir(self, storage_nodes):
+        list_of_ip = []
+        for node in storage_nodes:
+            list_of_ip.append(node[0])
+        result = [0, 0, 0]
         for file in self.files:
-            result += int(file.size)
+            for i, node in enumerate(list_of_ip):
+                if node in file.storages:
+                    result[i] += int(file.size)
         for child in self.dirs:
-            result += child.size_of_dir()
+            subresult = child.size_of_dir()
+            for i in range(3):
+                result[i] += subresult[i]
         return result
 
 
