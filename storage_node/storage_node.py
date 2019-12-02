@@ -98,10 +98,7 @@ class ClientListener(Thread):
             while True:
                 # try to read 1024 bytes from user
                 # this is blocking call, thread will be paused here
-                try:
-                    data = self.sock.recv(1024)
-                except:
-                    print(',')
+                data = self.sock.recv(1024)
                 if data:
                     f.write(data)
                 else:
@@ -139,11 +136,12 @@ class ClientReader(Thread):
     # clean up
     def _close(self):
         clients.remove(self.sock)
+        self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
         print(self.name + ' disconnected')
 
     def run(self):
-        filename = self.sock.recv(128).decode()
+        filename = self.sock.recv(1024).decode()
         f = open(filename, 'rb')
         print(f)
         file_size = f.tell()
@@ -155,11 +153,11 @@ class ClientReader(Thread):
         print('Response was received')
 
         with open(filename, 'rb') as f:
-            byte = f.read(128)
+            byte = f.read(1024)
 
             while byte:
                 self.sock.send(byte)
-                byte = f.read(128)
+                byte = f.read(1024)
         f.close()
         self._close()
         return
@@ -197,7 +195,7 @@ def receive(connection):
     next_name += 1
     print(str(addr) + ' connected as ' + name)
     print(name, con)
-    filename = con.recv(128).decode()
+    filename = con.recv(1024).decode()
     listener = ClientListener(name=name, sock=con, file=filename)
     listener.start()
     while listener.is_alive():
