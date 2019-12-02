@@ -190,7 +190,7 @@ def command_handler(message, conn):
         # add file to tree
         filename = words[1]
         size = words[2]
-        current_directory.add_file(name=filename, size=size, storage=[storage_node_ip])
+        current_directory.add_file(name=filename, size=size, storage=[storage_node_ip, storage_extra_ip])
         # opening of port on storage node
         _, storagenode_port = send_file(storage_node_ip, storage_node_port)
         out = storage_node_ip + ':' + storagenode_port
