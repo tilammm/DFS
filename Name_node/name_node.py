@@ -7,7 +7,7 @@ import psycopg2
 from Name_node.tree import Tree
 
 
-storage_list = [('1', 0, True), ('2', 0, True), ('3', 0, True)]
+storage_list = [['18.219.19.193', 0, True], ['18.220.138.17', 0, True], ['3.14.69.141', 0, True]]
 
 
 def ping_storage(storage_ip):
@@ -45,8 +45,7 @@ def giveIPs():
     global storage_list
     for i in range(len(storage_list)):
         storage_list[i][2] = ping_storage(storage_list[i][0])
-
-    storage_list = storage_list.sort(key=operator.itemgetter(1))
+    storage_list.sort(key=operator.itemgetter(1))
     count = 0
     ips = []
     for i in range(len(storage_list)):
@@ -58,8 +57,6 @@ def giveIPs():
 
 buffer_size = 1024
 number_of_users = 1
-
-
 
 
 def login_user(log_in, password):
@@ -172,21 +169,20 @@ def filerm(file_name):
         return 'error'
 
 
-def file_creation(file_name, first_storage, second_storage):
+def file_creation(file, first_storage, second_storage):
     global current_directory
-    new_file = current_directory.add_file(name=file_name, size=0, storage=[first_storage[0], second_storage[0]])
-    message = 'create_file:' + new_file.path
+    message = 'create_file:' + file.path
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((first_storage, 8000))
+    tcp_socket.connect((first_storage[0], 8000))
     tcp_socket.send(message.encode())
     tcp_socket.close()
 
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.connect((second_storage, 8000))
+    tcp_socket.connect((second_storage[0], 8000))
     tcp_socket.send(message.encode())
     tcp_socket.close()
 
-    return 'Created'
+    return 'created'
 
 
 def copy(file_name, dir_name):
@@ -230,19 +226,19 @@ def copy(file_name, dir_name):
         return 'error'
 
 
-def move(file_name, dir_name, storage_node_ip, storage_node_port):
+def move(file_name, dir_name):
     # add dir to tree
     global current_directory
     global file_tree
     candidate = file_tree.get_path_entity(dir_name)
 
     if candidate is None:
-        return 'error'
+        return 'Candidate error'
 
     current_file = current_directory.get_file(file_name)
 
     if current_file is None:
-        return 'error'
+        return 'Current file error'
 
     current_directory.delete_file(current_file.name)
     ping_storage(current_file.storages[0])
@@ -310,8 +306,8 @@ def command_handler(message, conn):
         # add file to tree
         filename = words[1]
         size = words[2]
-        first_storage[1] += size
-        second_storage[1] += size
+        first_storage[1] += int(size)
+        second_storage[1] += int(size)
 
         current_directory.add_file(name=filename, size=size, storage=[first_storage[0], second_storage[0]])
         # opening of port on storage node
@@ -351,7 +347,6 @@ def command_handler(message, conn):
                 out = current_directory.path
 
     elif words[0] == 'file_info':
-        global current_directory
         file = current_directory.get_file(words[1])
         if file is None:
             return 'error'
@@ -359,12 +354,12 @@ def command_handler(message, conn):
         out = file.info()
 
     elif words[0] == 'file_create':
-        global current_directory
-        file = current_directory.get_file(words[1])
+        file = current_directory.add_file(words[1], size=0, storage=[first_storage[0], second_storage[0]])
+
         if file is None:
             return 'error'
 
-        out = file.info()
+        out = file_creation(file, first_storage, second_storage)
 
     elif words[0] == 'show':
 
@@ -385,7 +380,7 @@ def command_handler(message, conn):
 
     elif words[0] == 'initialize':
         file_tree.delete_dir()
-        file_tree = Tree(name='root', path='/home/tilammm/PycharmProjects/DFS/files')
+        file_tree = Tree(name='root', path='files/')
         current_directory = file_tree
         out = send_init()
 

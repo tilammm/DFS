@@ -305,6 +305,7 @@ def move(words, conn):
 
 def create_file(filename):
     open(filename, 'a').close()
+    return 'Created'
 
 
 def command_handler(messages, connection):
