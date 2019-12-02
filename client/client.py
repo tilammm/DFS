@@ -181,6 +181,11 @@ def send_command(commands):
         tcp_socket.send(message.encode())
         data = tcp_socket.recv(buffer_size).decode()
 
+    elif commands[0] == 'move':
+        message = commands[0] + ':' + commands[1] + ':' + commands[2]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+
     elif commands[0] == 'filerm':
         message = commands[0] + ':' + commands[1]
         tcp_socket.send(message.encode())

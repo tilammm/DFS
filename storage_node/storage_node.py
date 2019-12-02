@@ -267,10 +267,54 @@ def delete_dir(dir_path, conn):
     return 'Removed'
 
 
-def copy(src, dst, conn):
+def copy(words, conn):
+    src = words[1]
+    dst = words[2]
+
+    filename = './' + dst
+    splitepath = filename.split('/')
+
+    if (len(splitepath) > 2):
+        all_file_path = filename[:-(len(splitepath[len(splitepath) - 1]))]
+        os.makedirs(all_file_path, exist_ok=True)
+
+    if len(words) > 3:
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(words)
+        tcp_socket.connect((words[3], int(words[4])))
+        message = words[0] + ':' + words[1] + ':' + words[2]
+        tcp_socket.sendall(message.encode())
+
+        status = tcp_socket.recv(1024).decode()
+        tcp_socket.close()
     shutil.copyfile(src, dst)
     conn.send('copied'.encode())
     return 'Copied'
+
+
+def move(words, conn):
+    src = words[1]
+    dst = words[2]
+
+    filename = './' + dst
+    splitepath = filename.split('/')
+
+    if (len(splitepath) > 2):
+        all_file_path = filename[:-(len(splitepath[len(splitepath) - 1]))]
+        os.makedirs(all_file_path, exist_ok=True)
+
+    if len(words) > 3:
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print(words)
+        tcp_socket.connect((words[3], int(words[4])))
+        message = words[0] + ':' + words[1] + ':' + words[2]
+        tcp_socket.sendall(message.encode())
+
+        status = tcp_socket.recv(1024).decode()
+        tcp_socket.close()
+    shutil.move(src, dst )
+    conn.send('moved'.encode())
+    return 'Moved'
 
 
 def command_handler(messages, connection):
@@ -297,7 +341,9 @@ def command_handler(messages, connection):
     elif messages[0] == 'del_dir':
         return delete_dir(messages[1], connection)
     elif messages[0] == 'copy':
-        return copy(messages[1], messages[2], connection)
+        return copy(messages, connection)
+    elif messages[0] == 'move':
+        return move(messages, connection)
     else:
         return 'error'
 
