@@ -116,11 +116,11 @@ class File:
         self.name = name
         self.path = path
         self.size = size
-        self.last_mod = datetime.datetime.now().ctime()
+        self.created = datetime.datetime.now().ctime()
         self.storages = storages
 
     def info(self):
         info = 'Name: ' + str(self.name) + '\n' + 'Size: ' + str(self.size) + ' bytes' + '\n' + 'Path: ' + \
-               str(self.path) + '\n' + 'Modified: ' + str(self.last_mod)
+               str(self.path) + '\n' + 'Created: ' + str(self.created)
         return info
 

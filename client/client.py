@@ -206,6 +206,20 @@ def send_command(commands):
         if data == 'error':
             data = 'Can not remove this file'
 
+    elif commands[0] == 'file_info':
+        message = 'file_info:' + commands[1]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+        if data == 'error':
+            data = 'Can not get info'
+
+    elif commands[0] == 'file_create':
+        message = 'file_create:' + commands[1]
+        tcp_socket.send(message.encode())
+        data = tcp_socket.recv(buffer_size).decode()
+        if data == 'error':
+            data = 'Can not create file'
+
     elif commands[0] == 'dir_delete':
         directories, files = show(tcp_socket)
         directories = directories.split()

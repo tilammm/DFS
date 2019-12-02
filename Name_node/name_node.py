@@ -172,6 +172,23 @@ def filerm(file_name):
         return 'error'
 
 
+def file_creation(file_name, first_storage, second_storage):
+    global current_directory
+    new_file = current_directory.add_file(name=file_name, size=0, storage=[first_storage[0], second_storage[0]])
+    message = 'create_file:' + new_file.path
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((first_storage, 8000))
+    tcp_socket.send(message.encode())
+    tcp_socket.close()
+
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((second_storage, 8000))
+    tcp_socket.send(message.encode())
+    tcp_socket.close()
+
+    return 'Created'
+
+
 def copy(file_name, dir_name):
     # add dir to tree
     global current_directory
@@ -332,6 +349,22 @@ def command_handler(message, conn):
             if new_dir is not None:
                 current_directory = new_dir
                 out = current_directory.path
+
+    elif words[0] == 'file_info':
+        global current_directory
+        file = current_directory.get_file(words[1])
+        if file is None:
+            return 'error'
+
+        out = file.info()
+
+    elif words[0] == 'file_create':
+        global current_directory
+        file = current_directory.get_file(words[1])
+        if file is None:
+            return 'error'
+
+        out = file.info()
 
     elif words[0] == 'show':
 
