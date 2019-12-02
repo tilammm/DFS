@@ -53,7 +53,7 @@ def login_user(log_in, password):
 def send_file(storage_node_ip, storage_node_port):
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.connect((storage_node_ip, storage_node_port))
-    message = 'receive:' + storage_extra_ip + ':' + str(storage_extra_port)
+    message = 'receive'
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
@@ -230,7 +230,8 @@ def command_handler(message, conn):
         current_directory.add_file(name=filename, size=size, storage=[storage_node_ip])
         # opening of port on storage node
         _, storagenode_port = send_file(storage_node_ip, storage_node_port)
-        out = storage_node_ip + ':' + storagenode_port
+        _, storagenodeextra_port = send_file(storage_extra_ip, storage_extra_port)
+        out = storage_node_ip + ':' + storagenode_port + ':' + storage_extra_ip + ':' + storagenodeextra_port
 
     elif words[0] == 'read':
         storagenode_ip, storagenode_port = read_file(storage_node_ip, storage_node_port)
