@@ -302,6 +302,14 @@ def delete_dir():
     return current_directory.path
 
 
+def add_storage(ip):
+    for i in range(len(storage_list)):
+        if not storage_list[i][2]:
+            storage_list[i][2] = True
+            storage_list[i][1] = 0
+            storage_list[i][0] = ip
+    return 'ok:' + ip
+
 def command_handler(message, conn):
     print(message)
     words = message.split(':')
@@ -340,6 +348,8 @@ def command_handler(message, conn):
 
     elif words[0] == 'move':
         out = move(words[1], words[2])
+    elif words[0] == 'hello':
+        out = add_storage(words[1])
 
     elif words[0] == 'filerm':
         out = filerm(words[1])

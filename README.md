@@ -1,7 +1,28 @@
 # Simple DFS
 
 ## Usage
-
+1.Install docker-compose:
+```
+$ sudo apt install docker-compose -y
+```
+2.Clone the repository and navigate to the repository folder
+```
+$ git clone https://github.com/tilammm/DFS.git
+```
+3.For run client:
+```
+$ python3 client/client.py
+```
+4.Docker swarm
+```
+$ docker swarm init
+$ docker swarm join --token <token>
+```
+5.Use deploy/docker-compose.yml at your nodes.
+6.Deploy docker-compose.yml on master node
+```
+$ docker stack deploy -c docker-compose.yml dfs
+```
 
 ## Architecture
 
