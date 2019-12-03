@@ -307,6 +307,7 @@ def create_file(filename):
     open(filename, 'a').close()
     return 'Created'
 
+
 def replication(messages):
     filename = messages[3]
     f = open(filename, 'rb')
@@ -326,8 +327,6 @@ def replication(messages):
     f.close()
     tcp_socket.close()
     return
-
-
 
 
 def command_handler(messages, connection):

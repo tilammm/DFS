@@ -155,6 +155,6 @@ class File:
 
     def info(self):
         info = 'Name: ' + str(self.name) + '\n' + 'Size: ' + str(self.size) + ' bytes' + '\n' + 'Path: ' + \
-               str(self.path) + '\n' + 'Created: ' + str(self.created)
+               str(self.path) + '\n' + 'Created: ' + str(self.created) + '\n' + 'Storages: ' + str(self.storages)
         return info
 
