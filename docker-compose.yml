@@ -1,9 +1,9 @@
 version: "3.7"
 
-# declare namenode, datanodes and client
+# declare namenode, storage_nodes and client
 services:
   namenode:
-    image: khabibullin/namenode:develop
+    image: tilammm/dfs:namenode
     deploy:
       replicas: 1
       placement:
@@ -11,14 +11,14 @@ services:
           - node.id == de53bfbeaed6  # change to your node id
 
     environment:
-      DATANODE1_HOST: datanode1
-      DATANODE2_HOST: datanode2
-      DATANODE3_HOST: datanode3
-      # add more datanodes if needed
+      STORAGE1_HOST: storage_node1
+      STORAGE2_HOST: storage_node2
+      STORAGE3_HOST: storage_node3
+      # add more storage_nodes if needed
 
 
-  datanode1:
-    image: khabibullin/datanode:develop
+  storage_node1:
+    image: tilammm/dfs:storage_node
     deploy:
       placement:
         constraints:
@@ -30,8 +30,8 @@ services:
       SERVER_PORT: 8000
 
 
-  datanode2:
-    image: khabibullin/datanode:develop
+  storage_node2:
+    image: tilammm/dfs:storage_node
     deploy:
       placement:
         constraints:
@@ -42,8 +42,8 @@ services:
       PORT: 18800
       SERVER_PORT: 8000
 
-  datanode3:
-    image: khabibullin/datanode:develop
+  storage_node3:
+    image: tilammm/dfs:storage_node
     deploy:
       placement:
         constraints:
@@ -55,7 +55,7 @@ services:
       SERVER_PORT: 8000
 
   client:
-    image: khabibullin/client:develop
+    image: tilammm/dfs:client
     deploy:
       replicas: 1
       placement:
