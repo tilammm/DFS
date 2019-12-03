@@ -18,7 +18,8 @@ $ python3 client/client.py
 $ docker swarm init
 $ docker swarm join --token <token>
 ```
-5.Use deploy/docker-compose.yml at your nodes.
+5.Use deploy/docker-compose.yml at your nodes
+
 6.Deploy docker-compose.yml on master node
 ```
 $ docker stack deploy -c docker-compose.yml dfs
