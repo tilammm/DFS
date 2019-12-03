@@ -307,6 +307,28 @@ def create_file(filename):
     open(filename, 'a').close()
     return 'Created'
 
+def replication(messages):
+    filename = messages[3]
+    f = open(filename, 'rb')
+    print(f)
+    tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp_socket.connect((messages[1], int(messages[2])))
+
+    tcp_socket.sendall(filename.encode())
+    message = tcp_socket.recv(1024)
+
+    with open(filename, 'rb') as f:
+        byte = f.read(1024)
+
+        while byte:
+            tcp_socket.send(byte)
+            byte = f.read(1024)
+    f.close()
+    tcp_socket.close()
+    return
+
+
+
 
 def command_handler(messages, connection):
     print(messages)
@@ -323,6 +345,9 @@ def command_handler(messages, connection):
     elif messages[0] == 'reading':
         reading(connection)
         return 'reading'
+    elif messages[0] == 'repl':
+        replication(messages)
+        return 'replicated'
     elif messages[0] == 'init':
         return init(connection)
     elif messages[0] == 'mkdir':

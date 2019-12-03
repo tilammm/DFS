@@ -26,6 +26,8 @@ def giveIPs():
     global storage_list
     for i in range(len(storage_list)):
         storage_list[i][2] = ping_storage(storage_list[i][0])
+        if not storage_list[i][2]:
+            replication(storage_list[i][0])
     storage_list.sort(key=operator.itemgetter(1))
     count = 0
     ips = []
@@ -38,6 +40,28 @@ def giveIPs():
 
 buffer_size = 1024
 number_of_users = 1
+
+def replication(fail_ip):
+    list_of_files = file_tree.replicate(fail_ip, storage_list)
+    for iter in range(len(list_of_files)):
+        source_ip = list_of_files[iter][1]
+        file_path = list_of_files[iter][0]
+        for i in storage_list:
+            if(i[0] != source_ip and i[0] != fail_ip):
+                destination_ip = i[0]
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_socket.connect((destination_ip, 8000))
+        message = 'receive'
+        tcp_socket.send(message.encode())
+        destination_port = tcp_socket.recv(buffer_size).decode()
+        tcp_socket.close()
+
+        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        tcp_socket.connect((source_ip, 8000))
+        message = 'repl:' + destination_ip + ':' + destination_port + ':' + file_path
+        tcp_socket.send(message.encode())
+        status = tcp_socket.recv(buffer_size).decode()
+        tcp_socket.close()
 
 
 def login_user(log_in, password):
