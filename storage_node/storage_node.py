@@ -380,7 +380,7 @@ def threaded(connection, address):
 
 
 if __name__ == '__main__':
-    namenode_ip = '3.134.91.70'
+    namenode_ip = '3.136.128.132'
     # initialize
     shutil.rmtree(path=root_directory, ignore_errors=True)
     os.mkdir(root_directory)
@@ -390,18 +390,6 @@ if __name__ == '__main__':
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', 8000))
-
-    # ping namenode
-    response = os.system("ping -c 1 " + namenode_ip)
-    if response:
-        tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tcp_socket.connect((namenode_ip, 5005))
-        host_name = socket.gethostname()
-        host_ip = socket.gethostbyname(host_name)
-        message = 'hello:' + host_ip
-        tcp_socket.sendall(message.encode())
-        message = tcp_socket.recv(1024)
-        tcp_socket.close()
 
     sock.listen()
 
