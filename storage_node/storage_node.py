@@ -380,7 +380,7 @@ def threaded(connection, address):
 
 
 if __name__ == '__main__':
-    namenode_ip = ''
+    namenode_ip = '3.134.91.70'
     # initialize
     shutil.rmtree(path=root_directory, ignore_errors=True)
     os.mkdir(root_directory)
