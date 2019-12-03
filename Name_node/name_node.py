@@ -3,11 +3,11 @@ import os
 import socket
 from _thread import *
 import threading
-import psycopg2
 from Name_node.tree import Tree
+import pickle
 
 
-storage_list = [['18.219.19.193', 0, True], ['18.220.138.17', 0, True], ['3.14.69.141', 0, True]]
+storage_list = [['3.134.106.22', 0, True], ['3.17.151.48', 0, True], ['18.217.2.254', 0, True]]
 
 
 def ping_storage(storage_ip):
@@ -20,25 +20,6 @@ def ping_storage(storage_ip):
         return True
     else:
         return False
-
-
-try:
-    connection = psycopg2.connect(user="test",
-                                  password="123456",
-                                  host="127.0.0.1",
-                                  port="5432",
-                                  database="DFS")
-
-    cursor = connection.cursor()
-    # Print PostgreSQL Connection properties
-    print(connection.get_dsn_parameters(), "\n")
-
-    # Print PostgreSQL version
-    cursor.execute("SELECT version();")
-    record = cursor.fetchone()
-
-except (Exception, psycopg2.Error) as error:
-    print("Error while connecting to PostgreSQL", error)
 
 
 def giveIPs():
@@ -60,23 +41,15 @@ number_of_users = 1
 
 
 def login_user(log_in, password):
-    query = 'select * from client where username = %s'
-    print(log_in)
-
-    cursor.execute(query, (log_in, ))
-    users = cursor.fetchall()
 
     global current_directory
     global file_tree
     current_directory = file_tree
 
-    if len(users) == 0:
+    if log_in != 'test' or password !='123456':
         return 0
     else:
-        if users[0][2] == password:
-            return users[0][0]
-        else:
-            return 0
+        return 1
 
 
 def send_file(storage_node_ip, storage_node_port):
@@ -96,7 +69,7 @@ def read_file(filename):
     global current_directory
     file = current_directory.get_file(filename)
     if file is None:
-        return 'error'
+        return 'error', 'error'
     ips = file.storages
     if ping_storage(ips[0]):
         storage_node_ip = ips[0]
@@ -108,10 +81,7 @@ def read_file(filename):
     tcp_socket.send(message.encode())
     status = tcp_socket.recv(buffer_size).decode()
     tcp_socket.close()
-    if status != 'error':
-        return storage_node_ip, status
-    else:
-        return storage_node_ip
+    return storage_node_ip, status
 
 
 def send_init():
@@ -390,6 +360,9 @@ def command_handler(message, conn):
     else:
         out = 'unknown command'
 
+    with open('file_tree.pkl', 'wb') as output:
+        pickle.dump(file_tree, output, pickle.HIGHEST_PROTOCOL)
+
     return out
 
 
@@ -418,8 +391,12 @@ if __name__ == '__main__':
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.bind((ip, port))
     tcp_socket.listen()
+    try:
+        with open('file_tree.pkl', 'rb') as input:
+            file_tree = pickle.load(input)
+    except:
+        file_tree = Tree(name='root', path='files/')
 
-    file_tree = Tree(name='root', path='files/')
     current_directory = file_tree
 
     while True:
