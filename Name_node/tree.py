@@ -12,6 +12,7 @@ def swap_ip(file, ip, ips_of_storages):
     file.storages = [result_storage, new_ip]
     return file, result_storage
 
+
 class Tree:
 
     def __init__(self, name, path, dirs=None, files=None, parent=None):
@@ -20,8 +21,7 @@ class Tree:
         self.dirs = dirs or []
         self.name = name
         self.path = path
-        self.last_mod = datetime.datetime.now().ctime()
-        self.number_of_file = 0
+        self.created = datetime.datetime.now().ctime()
 
     def delete_dir(self):
         if self.parent is None:

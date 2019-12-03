@@ -5,9 +5,10 @@ from _thread import *
 import threading
 import psycopg2
 from Name_node.tree import Tree
+import pickle
 
 
-storage_list = [['18.219.19.193', 0, True], ['18.220.138.17', 0, True], ['3.14.69.141', 0, True]]
+storage_list = [['3.134.106.22', 0, True], ['3.17.151.48', 0, True], ['18.217.2.254', 0, True]]
 
 
 def ping_storage(storage_ip):
@@ -390,6 +391,9 @@ def command_handler(message, conn):
     else:
         out = 'unknown command'
 
+    with open('file_tree.pkl', 'wb') as output:
+        pickle.dump(current_directory, output, pickle.HIGHEST_PROTOCOL)
+
     return out
 
 
@@ -418,8 +422,12 @@ if __name__ == '__main__':
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcp_socket.bind((ip, port))
     tcp_socket.listen()
+    try:
+        with open('file_tree.pkl', 'rb') as input:
+            file_tree = pickle.load(input)
+    except:
+        file_tree = Tree(name='root', path='files/')
 
-    file_tree = Tree(name='root', path='files/')
     current_directory = file_tree
 
     while True:
