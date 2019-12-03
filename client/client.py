@@ -4,7 +4,7 @@ import os
 import sys
 import readline
 
-namenode_ip = '127.0.0.1'
+namenode_ip = '18.219.161.182'
 namenode_port = 5005
 buffer_size = 1024
 

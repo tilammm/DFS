@@ -429,12 +429,11 @@ def threaded(connection, address):
 
 
 if __name__ == '__main__':
-    ip = '127.0.0.1'
     port = 5005
     print_lock = threading.Lock()
 
     tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcp_socket.bind((ip, port))
+    tcp_socket.bind(('', port))
     tcp_socket.listen()
     try:
         with open('file_tree.pkl', 'rb') as input:
