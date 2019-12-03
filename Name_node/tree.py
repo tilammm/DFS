@@ -124,7 +124,9 @@ class Tree:
                 self.files[index], result_ip = swap_ip(self.files[index], ip, list_of_ip)
                 result.append((self.files[index].path, result_ip))
         for index in range(len(self.dirs)):
-            result.append(self.dirs[index].replicate(ip, storage_nodes))
+            subresult = self.dirs[index].replicate(ip, storage_nodes)
+            for value in subresult:
+                result.append(value)
         return result
 
     def size_of_dir(self, storage_nodes):

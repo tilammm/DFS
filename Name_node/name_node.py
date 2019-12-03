@@ -7,7 +7,7 @@ from Name_node.tree import Tree
 import pickle
 
 
-storage_list = [['3.134.106.22', 0, True], ['3.17.151.48', 0, True], ['18.217.2.254', 0, True]]
+storage_list = [['13.58.91.37', 0, True], ['3.17.151.48', 0, True], ['18.216.4.141', 0, True]]
 
 
 def ping_storage(storage_ip):
@@ -41,11 +41,13 @@ def giveIPs():
 buffer_size = 1024
 number_of_users = 1
 
+
 def replication(fail_ip):
     list_of_files = file_tree.replicate(fail_ip, storage_list)
     for iter in range(len(list_of_files)):
-        source_ip = list_of_files[iter][1]
-        file_path = list_of_files[iter][0]
+        print(list_of_files)
+        print(iter)
+        file_path, source_ip = list_of_files[iter]
         for i in storage_list:
             if(i[0] != source_ip and i[0] != fail_ip):
                 destination_ip = i[0]
