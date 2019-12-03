@@ -17,7 +17,7 @@ Initialization is just clearing the tree and deleting all files in the storage n
 ```
 
 ### File write
-![](src/Send file.png?raw=true)
+![](src/Send_file.png?raw=true)
 ```
 1.The client tells namenode that it wants to send the file
 2.Namenode finds the two most suitable storage node and tells them to open ports
@@ -49,7 +49,7 @@ Initialization is just clearing the tree and deleting all files in the storage n
 
 
 ### File manipulation
-![](src/File manipulation.png?raw=true)
+![](src/File_manipulation.png?raw=true)
 
 ```
 Move / copy / delete operations are similar. First, namenode finds out from file tree on which nodes the file is located.
