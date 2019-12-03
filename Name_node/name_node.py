@@ -125,6 +125,9 @@ def filerm(file_name):
         tcp_socket.send(message.encode())
         response1 = tcp_socket.recv(buffer_size).decode()
         tcp_socket.close()
+        for iter in range(len(storage_list)):
+            if storage_list[iter][0] == ips[0]:
+                storage_list[iter][1] -= int(current_file.size)
 
     if ping_storage(ips[1]):
         tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -133,6 +136,9 @@ def filerm(file_name):
         tcp_socket.send(message.encode())
         response2 = tcp_socket.recv(buffer_size).decode()
         tcp_socket.close()
+        for iter in range(len(storage_list)):
+            if storage_list[iter][0] == ips[1]:
+                storage_list[iter][1] -= int(current_file.size)
     if response1 == 'removed' and response2 == 'removed':
         return 'File deleted: ' + file_name
     else:
@@ -191,6 +197,11 @@ def copy(file_name, dir_name):
     # send command to storage node
 
     if response1 == 'copied' and response2 == 'copied':
+        for iter in range(len(storage_list)):
+            if(storage_list[iter][0] == current_file.storages[0]):
+                storage_list[iter][1] += int(current_file.size)
+            if(storage_list[iter][0] == current_file.storages[1]):
+                storage_list[iter][1] += int(current_file.size)
         return 'File copied: ' + copied.name
     else:
         return 'error'
@@ -254,6 +265,10 @@ def delete_dir():
             tcp_socket.send(message.encode())
             response = tcp_socket.recv(buffer_size).decode()
             tcp_socket.close()
+    del1, del2, del3 = current_directory.size_of_dir(storage_list)
+    storage_list[0][1] -= del1
+    storage_list[1][1] -= del2
+    storage_list[2][1] -= del3
 
     # send command to storage node
 
@@ -353,6 +368,10 @@ def command_handler(message, conn):
         file_tree = Tree(name='root', path='files/')
         current_directory = file_tree
         out = send_init()
+        for i in range(len(storage_list)):
+            storage_list[i][1] = 0
+
+
 
     elif words[0] == 'dir_delete':
         out = delete_dir()

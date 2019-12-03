@@ -140,7 +140,7 @@ class Tree:
             subresult = child.size_of_dir()
             for i in range(3):
                 result[i] += subresult[i]
-        return result
+        return result[0], result[1], result[2]
 
 
 class File:
