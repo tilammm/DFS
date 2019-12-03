@@ -26,18 +26,18 @@ $ docker stack deploy -c docker-compose.yml dfs
 ```
 client side(available commands):
 ```
-1. initialize - Initialize the client storage on a new system
-2. file_create "name" - Create a new empty file
-3. read "file" - Read any file from DFS (download a file from the DFS to the Client side).
-4. write "file" - Put any file to DFS (upload a file from the Client side to the DFS)
-5. file_delete "file" - Delete file from DFS
-6. file_info "file" - Provide information about the file
-7. copy "file" "path" - Create a copy of file 
-8. move "file" "path" - Move a file to the specified path
-9. open "directory" - It allow to change directory
-10. show - Return list of files and list of directories, which are stored in the directory
-11. mkdir "name" - Create a new directory
-12. dir_delete "name" - Delete the directory. If the directory contains files the system should ask for confirmation from the user before deletion
+1. initialize             Initialize the client storage on a new system
+2. file_create "name"     Create a new empty file
+3. read "file"            Read any file from DFS (download a file from the DFS to the Client side).
+4. write "file"           Put any file to DFS (upload a file from the Client side to the DFS)
+5. file_delete "file"     Delete file from DFS
+6. file_info "file"       Provide information about the file
+7. copy "file" "path"     Create a copy of file 
+8. move "file" "path"     Move a file to the specified path
+9. open "directory"       It allow to change directory
+10. show                  Return list of files and list of directories, which are stored in the directory
+11. mkdir "name"          Create a new directory
+12. dir_delete "name"     Delete the directory. If the directory contains files the system should ask for confirmation from the user before deletion
 ```
 
 ## Architecture
