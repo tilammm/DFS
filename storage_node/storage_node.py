@@ -346,6 +346,7 @@ def command_handler(messages, connection):
         return 'reading'
     elif messages[0] == 'repl':
         replication(messages)
+        connection.sendall('ok')
         return 'replicated'
     elif messages[0] == 'init':
         return init(connection)
@@ -381,9 +382,11 @@ def threaded(connection, address):
 
 if __name__ == '__main__':
     namenode_ip = '3.136.128.132'
+
     # initialize
     shutil.rmtree(path=root_directory, ignore_errors=True)
     os.mkdir(root_directory)
+    open('storagenode_node.txt', 'a').close()
     print('Server is ready for commands')
     if not os.path.exists('files'):
         os.makedirs('files')
