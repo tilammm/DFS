@@ -346,7 +346,7 @@ def command_handler(messages, connection):
         return 'reading'
     elif messages[0] == 'repl':
         replication(messages)
-        connection.sendall('ok')
+        connection.sendall('ok'.encode())
         return 'replicated'
     elif messages[0] == 'init':
         return init(connection)
